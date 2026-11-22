@@ -82,6 +82,43 @@ nav.tabs button.on{color:var(--acc);font-weight:600}
 .hero{background:var(--dg-bg);position:relative}
 .hero svg{display:block;width:100%;max-height:46vh}
 .hero img{display:block;width:100%;max-height:50vh;object-fit:cover}
+.heroseg{position:absolute;right:10px;bottom:10px;font-size:13px}
+.heroseg button{padding:5px 10px}
+.credit{font-size:11px;color:var(--muted);padding:4px 16px 0}
+.credit a{color:var(--muted)}
+.plan{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);margin:8px 16px 12px;overflow:hidden}
+.plan .ph{background:var(--acc);color:#fff;padding:12px 14px}
+.plan .ph .k{font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.plan .ph .t{font-size:21px;font-weight:700;line-height:1.2}
+.plan .ph .f{font-size:13px;opacity:.9}
+.plan .bd{padding:10px 14px 14px}
+.plan.cardio .ph{background:var(--hot)}
+.slots{list-style:none;margin:0;padding:0;counter-reset:s}
+.slots li{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.slots li:last-child{border-bottom:0}
+.slots li::before{counter-increment:s;content:counter(s);font-weight:700;color:var(--muted);width:16px;flex:none}
+.slots .nm{flex:1;min-width:0}
+.slots .sr{font-weight:600;white-space:nowrap;font-size:14px}
+.slots .sub{font-size:12px;color:var(--muted)}
+.rest{background:var(--ok-l);color:var(--ok);border-radius:10px;padding:8px 12px;font-size:14px;margin-bottom:10px}
+.btnrow{display:flex;gap:8px;margin-top:12px}
+.btnrow .btn{flex:1}
+.bar2{height:10px;background:var(--line);border-radius:9px;overflow:hidden;margin:6px 0}
+.bar2 i{display:block;height:100%;background:var(--hot)}
+.slot{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);margin:0 16px 12px;padding:12px 13px}
+.slot.done{box-shadow:none;border:2px solid var(--ok-l)}
+.slot .top{display:flex;gap:10px;align-items:center}
+.slot .top .th{width:60px;height:46px;border-radius:8px;overflow:hidden;background:var(--dg-bg);flex:none;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
+.slot .top .th img,.slot .top .th svg{width:100%;height:100%;object-fit:cover}
+.slot .nm{font-weight:700}
+.slot .tg{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.slot .target{font-weight:700;color:var(--acc-d);white-space:nowrap}
+.slot .last{font-size:13px;color:var(--muted);margin-top:6px}
+.slot .ok{color:var(--ok);font-weight:600;font-size:14px;margin-top:6px}
+.pl{background:var(--card);border:2px solid transparent;border-radius:var(--r);box-shadow:var(--shadow);padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.pl.on{border-color:var(--acc)}
+.pl .t{font-weight:700;font-size:17px}
+.pl .d{font-size:14px;color:var(--muted)}
 .phase{position:absolute;left:12px;bottom:10px;background:rgba(255,255,255,.85);border-radius:99px;padding:2px 10px;font-size:13px;font-weight:600;color:var(--acc-d)}
 .det{padding:14px 16px}
 .det h2{margin:0 0 6px;font-size:25px;line-height:1.2}
@@ -174,6 +211,9 @@ a{color:var(--acc)}
 <div id="app"></div>
 <script src="config.js"></script>
 <script src="exercises.js"></script>
+<script src="exercises-more.js"></script>
+<script src="plans.js"></script>
+<script src="photos.js"></script>
 <script type="module">
 /* ============================================================
    Data layer: Firebase (shared) or localStorage (this device only)
@@ -184,6 +224,8 @@ const HID = (CFG.householdId || "household").trim();
 const ROOT = "gyms";
 document.title = CFG.appName || "Our Workouts";
 const { EX: BUILTIN, svg: drawSvg, animate } = window.WORKOUT_LIB;
+const { PLANS, CARDIO, SPECIALS } = window.WORKOUT_PLANS;
+const PHOTOS = window.WORKOUT_PHOTOS || {};
 
 const store = { mode: "local" };
 let fb = null;
@@ -258,6 +300,7 @@ function deleteDoc(coll, id) {
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function toast(msg, ms = 2600) {
+  document.querySelectorAll(".toast").forEach((x) => x.remove());
   const t = document.createElement("div");
   t.className = "toast"; t.textContent = msg;
   document.body.appendChild(t);
@@ -279,6 +322,7 @@ const num = (n) => (n == null || n === "" || isNaN(n) ? "" : String(Math.round(N
 function fmtTime(s) {
   s = Math.round(Number(s) || 0);
   if (s < 60) return s + " sec";
+  if (s >= 600 && s % 60 === 0) return s / 60 + " min";
   return Math.floor(s / 60) + ":" + pad2(s % 60);
 }
 const fmtClock = (s) => { s = Math.round(Number(s) || 0); return Math.floor(s / 60) + ":" + pad2(s % 60); };
@@ -309,7 +353,7 @@ const EQUIP = ["None", "Barbell", "Dumbbells", "Kettlebell", "Machine", "Cable",
 const GROUP_EMOJI = { Legs: "🦵", Chest: "💪", Back: "🚣", Shoulders: "🏋️", Arms: "💪", Core: "🧘", Cardio: "🏃", "Full body": "🤸" };
 const S = {
   tab: "library", q: "", filter: "All",
-  logs: [], custom: [], people: [], media: {},
+  logs: [], custom: [], people: [], media: {}, sessions: [],
   loaded: { people: false },
   personId: localStorage.getItem("wk:person") || "",
   unit: localStorage.getItem("wk:unit") || "lb",
@@ -500,8 +544,10 @@ function media(ex) { return ex.custom ? { photo: ex.photo, video: ex.video } : S
 function thumb(ex, cls = "dg") {
   const md = media(ex);
   if (md.photo) return `<img src="${esc(md.photo)}" alt="">`;
+  const bp = PHOTOS[ex.id];
+  if (bp) return `<img src="${esc(bp.src)}" alt="" loading="lazy">`;
   if (ex.poses) return drawSvg(ex, ex.thumbT ?? (ex.id === "deadlift" ? 0 : 1), cls);
-  return `<span>${GROUP_EMOJI[ex.group] || "🏋️"}</span>`;
+  return `<span>${ex.emoji || GROUP_EMOJI[ex.group] || "🏋️"}</span>`;
 }
 function ytId(url) {
   const m = String(url || "").match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/);
@@ -570,6 +616,7 @@ function logCard(l, showWho) {
     <div class="th">${ex ? thumb(ex) : "🏋️"}</div>
     <div class="bd"><div class="tt">${esc(ex ? ex.name : l.exName || "Exercise")}</div>
     <div class="sm">${esc(summary(l))}</div>
+    ${l.planDay ? `<div class="mt">📋 ${esc(l.planDay)}</div>` : ""}
     ${showWho && l.personName ? `<div class="mt">${esc(l.personName)}</div>` : ""}
     ${l.notes ? `<div class="nt">${esc(l.notes)}</div>` : ""}</div>
     <button class="del" data-act="log-del" data-id="${esc(l.id)}" aria-label="Delete">🗑️</button></div>`;
@@ -582,8 +629,9 @@ function viewToday() {
     if (!recent.includes(l.exId) && exById(l.exId)) recent.push(l.exId);
     if (recent.length >= 8) break;
   }
-  return `
-    <div class="quick">
+  return `${planCards()}
+    <div class="dayh">Quick log</div>
+    <div class="quick" style="margin-top:0">
       <div class="q1"><input id="quick" placeholder="e.g. bench press 3 sets of 8 at 135" enterkeyhint="go" autocomplete="off">${micBtn("quick-mic")}<button class="btn pri" data-act="quick-go">Go</button></div>
       <div class="hint">${SR ? "Tap 🎤 and say what you did, or type it." : "Type what you did, or tap the keyboard's 🎤 to dictate."} You'll check it before saving.</div>
     </div>
@@ -715,12 +763,19 @@ function openExercise(id) {
   const pb = personalBest(ex), last = lastLog(ex.id);
   const alts = (ex.alts || []).slice().sort((a, b) => isNoEquip(b) - isNoEquip(a));
   const hasDiagram = !!ex.poses;
+  const bp = PHOTOS[ex.id];
   const vid = ytId(md.video);
   const yt = "https://www.youtube.com/results?search_query=" + encodeURIComponent("how to " + ex.name + " proper form");
   const list = (arr, cls) => (arr && arr.length ? `<ul class="bul ${cls}">${arr.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "");
   const html = `
     <div class="sbar"><button class="btn sm" data-act="close">‹ Back</button><div class="sp">${esc(ex.name)}</div>${ex.custom ? `<button class="btn sm" data-act="ex-edit" data-id="${esc(ex.id)}">Edit</button>` : `<span style="width:60px"></span>`}</div>
-    <div class="hero">${hasDiagram ? drawSvg(ex, 0, "dg") + `<div class="phase" id="phase">Start</div>` : md.photo ? `<img src="${esc(md.photo)}" alt="${esc(ex.name)}">` : `<div style="font-size:70px;text-align:center;padding:30px">${GROUP_EMOJI[ex.group] || "🏋️"}</div>`}</div>
+    <div class="hero">
+      ${bp ? `<div id="hphoto"><img src="${esc(bp.src)}" alt="${esc(ex.name)}"></div>` : ""}
+      ${hasDiagram ? `<div id="hdiag" class="${bp ? "hide" : ""}">${drawSvg(ex, 0, "dg")}<div class="phase" id="phase">Start</div></div>` : ""}
+      ${!bp && !hasDiagram ? (md.photo ? `<img src="${esc(md.photo)}" alt="${esc(ex.name)}">` : `<div style="font-size:70px;text-align:center;padding:30px">${ex.emoji || GROUP_EMOJI[ex.group] || "🏋️"}</div>`) : ""}
+      ${bp && hasDiagram ? `<div class="seg heroseg"><button data-act="hero" data-v="photo" class="on">Photo</button><button data-act="hero" data-v="diag">Moving diagram</button></div>` : ""}
+    </div>
+    ${bp ? `<div class="credit">Photo: <a href="${esc(bp.page)}" target="_blank" rel="noopener">${esc(bp.credit)}</a>${bp.license ? ", " + esc(bp.license) : ""}, Wikimedia Commons</div>` : ""}
     <div class="det">
       <h2>${esc(ex.name)}</h2>
       <div class="tags"><span class="tag">${esc(ex.group)}</span>${isNoEquip(ex) ? `<span class="tag ok">No equipment</span>` : `<span class="tag">${esc(ex.equip || "")}</span>`}<span class="tag">${ex.kind === "time" ? "Timed" : ex.kind === "reps" ? "Reps" : "Weight × reps"}</span></div>
@@ -741,7 +796,7 @@ function openExercise(id) {
       }).join("")}</div>` : ""}
       <div class="sec"><h3>Video & photo</h3>
         ${vid ? `<div class="vid"><iframe src="https://www.youtube-nocookie.com/embed/${vid}" allowfullscreen title="Video"></iframe></div>` : md.video ? `<p><a href="${esc(md.video)}" target="_blank" rel="noopener">▶ Open saved video</a></p>` : ""}
-        ${md.photo && hasDiagram ? `<img class="myphoto" src="${esc(md.photo)}" alt="Form photo">` : ""}
+        ${md.photo && (hasDiagram || bp) ? `<img class="myphoto" src="${esc(md.photo)}" alt="Form photo">` : ""}
         <div class="chips wrap">
           <a class="chip" href="${yt}" target="_blank" rel="noopener">▶ Find a how-to video</a>
           <button class="chip" data-act="media-video" data-id="${esc(ex.id)}">${md.video ? "Change" : "Save"} video link</button>
@@ -766,14 +821,19 @@ function openLog(opts = {}) {
   const existing = opts.logId ? S.logs.find((l) => l.id === opts.logId) : null;
   let ex = exById(existing ? existing.exId : opts.exId) || null;
   LG = existing
-    ? { id: existing.id, exId: existing.exId, date: existing.date, unit: existing.unit || S.unit, sets: JSON.parse(JSON.stringify(existing.sets || [])), notes: existing.notes || "", active: 0, personId: existing.personId, personName: existing.personName, ts: existing.ts }
+    ? { id: existing.id, exId: existing.exId, date: existing.date, unit: existing.unit || S.unit, sets: JSON.parse(JSON.stringify(existing.sets || [])), notes: existing.notes || "", active: 0, personId: existing.personId, personName: existing.personName, ts: existing.ts, sessionId: existing.sessionId, slot: existing.slot, planDay: existing.planDay, target: existing.target }
     : { exId: ex ? ex.id : "", date: isoDay(), unit: S.unit, sets: [], notes: "", active: 0 };
-  if (!LG.sets.length) LG.sets.push(blankSet(ex ? ex.kind : "weight"));
+  if (!existing && opts.session) Object.assign(LG, opts.session);
+  if (!LG.sets.length) {
+    const n = LG.target && !existing ? LG.target.sets : 1;
+    for (let i = 0; i < n; i++) LG.sets.push(blankSet(ex ? ex.kind : "weight"));
+  }
   const opt = (e) => `<option value="${esc(e.id)}" ${LG.exId === e.id ? "selected" : ""}>${esc(e.name)}</option>`;
   const groups = GROUPS.filter((g) => exList.some((e) => e.group === g));
   const html = `
-    <div class="sbar"><button class="btn sm" data-act="close">Cancel</button><div class="sp">${existing ? "Edit workout" : "Log workout"}</div><button class="btn sm pri" data-act="log-save">Save</button></div>
+    <div class="sbar"><button class="btn sm" data-act="close">Cancel</button><div class="sp">${existing ? "Edit workout" : LG.planDay ? esc(LG.planDay) : "Log workout"}</div><button class="btn sm pri" data-act="log-save">Save</button></div>
     <div class="ed">
+      ${LG.target ? `<div class="lastt" style="background:var(--hot-l);color:var(--hot)"><span class="sp">🎯 Plan: <b>${LG.target.sets} sets × ${esc(LG.target.reps)} reps</b>${LG.target.name ? " · " + esc(LG.target.name) : ""}</span></div>` : ""}
       <div class="f"><label>Say it or type it</label>
         <div class="withmic"><input id="lgquick" placeholder="e.g. squat 3 sets of 5 at 185" autocomplete="off" enterkeyhint="done">${micBtn("lg-mic")}<button class="btn" data-act="lg-fill">Fill</button></div>
         <div class="hint">Fills in the exercise, sets, reps, weight or time below.</div></div>
@@ -819,11 +879,12 @@ function renderSets() {
   const k = ex.kind, u = LG.unit;
   const last = lastLog(ex.id);
   const lastBox = last && last.id !== LG.id ? `<div class="lastt"><span class="sp">Last time (${esc(dayLabel(last.date))}): <b>${esc(summary(last))}</b></span><button class="btn sm" data-act="lg-repeat">Repeat</button></div>` : "";
+  const repPh = LG.target ? String(LG.target.reps).split(" ")[0] : "0";
   const rows = LG.sets.map((st, i) => {
     let inner;
     if (k === "time") inner = `<input inputmode="text" data-f="s" data-i="${i}" value="${st.s != null ? fmtClock(st.s) : ""}" placeholder="0:30" style="width:84px" aria-label="Time"><span class="u">min:sec</span>`;
-    else if (k === "reps") inner = `<input inputmode="numeric" data-f="r" data-i="${i}" value="${num(st.r)}" placeholder="0" aria-label="Reps"><span class="u">reps</span><span class="u" style="margin-left:6px">+</span><input inputmode="decimal" data-f="w" data-i="${i}" value="${st.w ? num(st.w) : ""}" placeholder="0" style="width:56px" aria-label="Extra weight"><span class="u">${u}</span>`;
-    else inner = `<input inputmode="decimal" data-f="w" data-i="${i}" value="${num(st.w)}" placeholder="0" aria-label="Weight"><span class="u">${u} ×</span><input inputmode="numeric" data-f="r" data-i="${i}" value="${num(st.r)}" placeholder="0" aria-label="Reps"><span class="u">reps</span>`;
+    else if (k === "reps") inner = `<input inputmode="numeric" data-f="r" data-i="${i}" value="${num(st.r)}" placeholder="${repPh}" aria-label="Reps"><span class="u">reps</span><span class="u" style="margin-left:6px">+</span><input inputmode="decimal" data-f="w" data-i="${i}" value="${st.w ? num(st.w) : ""}" placeholder="0" style="width:56px" aria-label="Extra weight"><span class="u">${u}</span>`;
+    else inner = `<input inputmode="decimal" data-f="w" data-i="${i}" value="${num(st.w)}" placeholder="0" aria-label="Weight"><span class="u">${u} ×</span><input inputmode="numeric" data-f="r" data-i="${i}" value="${num(st.r)}" placeholder="${repPh}" aria-label="Reps"><span class="u">reps</span>`;
     return `<div class="set ${i === LG.active ? "on" : ""}" data-act="lg-active" data-i="${i}"><span class="no">${i + 1}</span>${inner}${LG.sets.length > 1 ? `<button class="x" data-act="lg-rm" data-i="${i}" aria-label="Remove set">✕</button>` : ""}</div>`;
   }).join("");
   const cur = LG.sets[LG.active];
@@ -889,6 +950,7 @@ function saveLog(force) {
     id: LG.id, exId: ex.id, exName: ex.name, kind: ex.kind, date: LG.date || isoDay(), unit: LG.unit,
     sets, notes: (LG.notes || "").trim(), ts: LG.ts || Date.now(),
     personId: LG.personId || S.personId || "", personName: LG.personName || myName() || "",
+    sessionId: LG.sessionId, slot: LG.slot, planDay: LG.planDay, target: LG.target,
   });
   closeSheet();
   setTimeout(() => {
@@ -896,6 +958,216 @@ function saveLog(force) {
     if (isNew && pbAfter && (!pbBefore || pbAfter.score > pbBefore.score) && pbBefore) toast("🏆 New personal best: " + pbAfter.label + "!", 3500);
     else toast(isNew ? "Saved " + ex.name : "Updated");
   }, 150);
+}
+
+/* ============================================================
+   Workout plans
+   ============================================================ */
+const planById = (id) => PLANS.find((p) => p.id === id);
+const myPlan = () => (me() ? planById(me().planId) : null);
+const specialFor = (person) => SPECIALS.find((d) => d.key === (person && person.special)) || SPECIALS[0];
+function planSeq(plan, person) {
+  return plan.sequence.map((d) => (d === "SPECIAL" ? specialFor(person) : d));
+}
+const mySessions = () => S.sessions.filter((x) => x.personId === S.personId);
+function activeSession() {
+  return mySessions().filter((x) => !x.finishedAt).sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0))[0];
+}
+function lastFinished(planId) {
+  return mySessions().filter((x) => x.finishedAt && x.planId === planId).sort((a, b) => b.finishedAt - a.finishedAt)[0];
+}
+function nextSeqIndex(plan) {
+  const last = lastFinished(plan.id);
+  const n = plan.sequence.length;
+  return last ? (Number(last.seq) + 1) % n : 0;
+}
+function dayForSession(sess) {
+  const plan = planById(sess.planId);
+  if (!plan) return null;
+  const owner = S.people.find((p) => p.id === sess.personId);
+  if (sess.dayKey && sess.dayKey.startsWith("SP_")) return SPECIALS.find((d) => d.key === sess.dayKey);
+  return planSeq(plan, owner)[sess.seq] || null;
+}
+function slotChoice(slot, sess, i) {
+  if (sess && sess.choices && sess.choices[i]) return sess.choices[i];
+  const ids = slot.options.map((o) => o.ex);
+  const recent = myLogs().filter((l) => ids.includes(l.exId)).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
+  return recent ? recent.exId : ids[0];
+}
+const slotLabel = (slot, exId) => (slot.options.find((o) => o.ex === exId) || {}).label || (exById(exId) || {}).name || "";
+function restNote(plan) {
+  const last = lastFinished(plan.id);
+  if (!last) return "";
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const lastDay = dayForSession(last);
+  const name = lastDay ? lastDay.name : "";
+  if (last.date === isoDay()) return `✅ You did ${esc(name)} today. Nice work! Next one is below.`;
+  if (last.date === isoDay(y) && (plan.restAfterEvery || (plan.restAfter || []).includes(last.dayKey)))
+    return `😴 Rest day suggested today (you did ${esc(name)} yesterday). Cardio is fine today.`;
+  return "";
+}
+function weekRange() {
+  const d = new Date(), dow = (d.getDay() + 6) % 7; // Monday = 0
+  const mon = new Date(d); mon.setDate(d.getDate() - dow);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return [isoDay(mon), isoDay(sun)];
+}
+function cardioWeek() {
+  const [a, b] = weekRange();
+  const logs = myLogs().filter((l) => l.date >= a && l.date <= b && (exById(l.exId) || {}).group === "Cardio");
+  const secs = logs.reduce((t, l) => t + (l.sets || []).reduce((u, st) => u + (Number(st.s) || 0), 0), 0);
+  return { min: Math.round(secs / 60), sessions: logs.length };
+}
+function slotList(day, sess) {
+  return `<ol class="slots">${day.slots.map((sl, i) => {
+    const exId = slotChoice(sl, sess, i);
+    return `<li><div class="nm">${esc(slotLabel(sl, exId))}<div class="sub">${esc(sl.body)} · ${esc(sl.name)}</div></div><div class="sr">${sl.sets} × ${esc(sl.reps)}</div></li>`;
+  }).join("")}</ol>`;
+}
+function planCards() {
+  let html = "";
+  const person = me();
+  const act = activeSession();
+  if (act) {
+    const day = dayForSession(act);
+    const done = new Set(S.logs.filter((l) => l.sessionId === act.id).map((l) => l.slot)).size;
+    html += `<div class="plan"><div class="ph"><div class="k">Workout in progress</div><div class="t">${esc(day ? day.name : "Workout")}</div><div class="f">${done} of ${day ? day.slots.length : "?"} exercises done</div></div>
+      <div class="bd"><button class="btn pri block" data-act="sess-open" data-id="${esc(act.id)}">Continue workout</button></div></div>`;
+  }
+  const plan = myPlan();
+  if (!plan && !act) {
+    html += `<div class="plan"><div class="ph"><div class="k">Workout plan</div><div class="t">Pick a plan</div><div class="f">3, 4, 5 or 6-day Push Pull Legs, plus Cardio</div></div>
+      <div class="bd"><div class="small">Choose a plan and the app tells you what's on today, in order, with sets and reps.</div><button class="btn pri block" style="margin-top:10px" data-act="plans">Choose a plan</button></div></div>`;
+  } else if (plan && !act) {
+    const idx = nextSeqIndex(plan), seq = planSeq(plan, person), day = seq[idx];
+    const note = restNote(plan);
+    html += `<div class="plan"><div class="ph"><div class="k">${esc(plan.short)} · up next</div><div class="t">${esc(day.name)}</div><div class="f">${esc(day.focus)} · ${day.slots.length} exercises</div></div>
+      <div class="bd">${note ? `<div class="rest">${note}</div>` : ""}
+      ${slotList(day, null)}
+      <div class="btnrow"><button class="btn pri" data-act="sess-start" data-seq="${idx}">Start workout</button><button class="btn" data-act="plan-days">Other day</button></div>
+      <div class="small" style="margin-top:8px;text-align:center"><a href="#" data-act="plans">Plan settings</a></div></div></div>`;
+  }
+  if (person && person.cardio) {
+    const c = cardioWeek(), pct = Math.min(100, Math.round((c.min / CARDIO.minutesPerWeek) * 100));
+    html += `<div class="plan cardio"><div class="ph"><div class="k">Cardio this week</div><div class="t">${c.min} / ${CARDIO.minutesPerWeek} min</div><div class="f">${c.sessions} session${c.sessions === 1 ? "" : "s"} · Monday to Sunday</div></div>
+      <div class="bd"><div class="bar2"><i style="width:${pct}%"></i></div>
+      <div class="small">${c.min >= CARDIO.minutesPerWeek ? "🎉 Weekly goal done!" : `${CARDIO.minutesPerWeek - c.min} min to go. Conversational pace, and keep it at least 6 hours away from lifting.`}</div>
+      <div class="chips wrap">${CARDIO.exercises.map((id) => `<button class="chip sm" data-act="log-ex" data-id="${id}">${exById(id).emoji || ""} ${esc(exById(id).name)}</button>`).join("")}</div></div></div>`;
+  }
+  return html;
+}
+
+function openPlans() {
+  if (!me()) { openPeople(() => openPlans()); toast("First, who's this plan for?"); return; }
+  const person = me();
+  const html = `
+    <div class="sbar"><button class="btn sm" data-act="close">Done</button><div class="sp">${esc(person.name)}'s plan</div><span style="width:60px"></span></div>
+    <div class="ed">
+      <div class="lbl">Lifting plan</div>
+      ${PLANS.map((p) => `<div class="pl ${person.planId === p.id ? "on" : ""}" data-act="plan-set" data-id="${p.id}">
+        <div class="t">${person.planId === p.id ? "✓ " : ""}${esc(p.name)}</div><div class="d">${esc(p.blurb)}</div>
+        ${person.planId === p.id ? `<div class="sec" style="margin-top:10px"><div class="lbl">Suggested week</div><ul class="bul good">${p.schedule.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+          ${p.specials ? `<div class="lbl" style="margin-top:10px">Your specialized day (the body part you want to improve)</div><div class="chips wrap">${p.specials.map((d) => `<button class="chip sm ${specialFor(person).key === d.key ? "on" : ""}" data-act="plan-special" data-v="${d.key}">${esc(d.name)}</button>`).join("")}</div>` : ""}
+          <div class="lbl" style="margin-top:10px">The days in order</div>${planSeq(p, person).map((d, i) => `<div class="small">${i + 1}. <b>${esc(d.name)}</b>: ${esc(d.focus)}</div>`).join("")}
+          <div class="lbl" style="margin-top:10px">How to use it</div><ul class="bul good">${p.how.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+      </div>`).join("")}
+      ${person.planId ? `<button class="btn block" data-act="plan-set" data-id="">Stop following a plan</button>` : ""}
+      <div class="lbl" style="margin-top:20px">Add-on</div>
+      <div class="pl ${person.cardio ? "on" : ""}" data-act="plan-cardio">
+        <div class="t">${person.cardio ? "✓ " : ""}Cardio: ${CARDIO.minutesPerWeek} min a week</div><div class="d">${esc(CARDIO.blurb)} Tracks your weekly minutes on the Today tab.</div>
+        ${person.cardio ? `<ul class="bul good" style="margin-top:8px">${CARDIO.rules.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      </div>
+      <p class="small">Plans typed in from ${esc(window.WORKOUT_PLANS.source)}.</p>
+    </div>`;
+  openSheet(html);
+}
+function updateMe(patch) {
+  const p = me();
+  if (!p) return;
+  Object.assign(p, patch);
+  saveDoc("people", { ...p, ...patch });
+}
+function reopenTop(fn) { closeSheet(); fn(); }
+
+function openDayPicker() {
+  const plan = myPlan(); if (!plan) return;
+  const seq = planSeq(plan, me()), next = nextSeqIndex(plan);
+  const html = `
+    <div class="sbar"><button class="btn sm" data-act="close">Cancel</button><div class="sp">Pick a different day</div><span style="width:60px"></span></div>
+    <div class="ed"><p class="small" style="margin-top:0">After this workout, the plan carries on from the day you pick.</p>
+    ${seq.map((d, i) => `<div class="pl ${i === next ? "on" : ""}" data-act="sess-start" data-seq="${i}"><div class="t">${esc(d.name)}${i === next ? " · up next" : ""}</div><div class="d">${esc(d.focus)} · ${d.slots.length} exercises</div></div>`).join("")}
+    </div>`;
+  openSheet(html);
+}
+function startSession(seq) {
+  const plan = myPlan(); if (!plan) return;
+  const act = activeSession();
+  if (act) { openSession(act.id); return; }
+  const day = planSeq(plan, me())[seq];
+  const id = saveDoc("sessions", {
+    personId: S.personId, personName: myName(), planId: plan.id, seq, dayKey: day.key, dayName: day.name,
+    date: isoDay(), startedAt: Date.now(), finishedAt: null, choices: {},
+  });
+  while (sheets.length) closeSheet();
+  setTimeout(() => openSession(id), 50);
+}
+let SESS = null; // { id, el }
+function openSession(id) {
+  const el = openSheet(`<div id="sessbody"></div>`, () => { SESS = null; });
+  SESS = { id, el };
+  renderSession();
+}
+function refreshSessionSheet() { if (SESS) renderSession(); }
+function renderSession() {
+  const sess = S.sessions.find((x) => x.id === SESS.id);
+  const box = $("#sessbody", SESS.el);
+  if (!sess) { box.innerHTML = `<div class="sbar"><button class="btn sm" data-act="close">Close</button><div class="sp">Workout</div></div><div class="empty">This workout was removed.</div>`; return; }
+  const day = dayForSession(sess), plan = planById(sess.planId);
+  const logs = S.logs.filter((l) => l.sessionId === sess.id);
+  const doneCount = new Set(logs.map((l) => l.slot)).size;
+  const finished = !!sess.finishedAt;
+  box.innerHTML = `
+    <div class="sbar"><button class="btn sm" data-act="close">‹ Back</button><div class="sp">${esc(day.name)}</div>${finished ? `<span style="width:60px"></span>` : `<button class="btn sm pri" data-act="sess-finish">Finish</button>`}</div>
+    <div class="det" style="padding-bottom:4px"><div class="small">${esc(plan ? plan.short : "")} · ${esc(day.focus)} · ${esc(dayLabel(sess.date))}</div>
+    <div class="bar2" style="margin-top:8px"><i style="width:${Math.round((doneCount / day.slots.length) * 100)}%;background:var(--ok)"></i></div>
+    <div class="small">${doneCount} of ${day.slots.length} done · do them in this order</div></div>
+    ${day.slots.map((sl, i) => {
+      const exId = slotChoice(sl, sess, i), ex = exById(exId);
+      const mine = logs.filter((l) => l.slot === i);
+      const last = !mine.length && lastLog(exId);
+      const uniq = [...new Map(sl.options.map((o) => [o.ex, o])).values()];
+      return `<div class="slot ${mine.length ? "done" : ""}">
+        <div class="tg">${i + 1}. ${esc(sl.body)} · ${esc(sl.name)}</div>
+        <div class="top" style="margin-top:6px"><div class="th" data-act="ex" data-id="${esc(exId)}">${ex ? thumb(ex) : ""}</div>
+          <div style="flex:1;min-width:0"><div class="nm">${esc(slotLabel(sl, exId))}</div><div class="small"><a href="#" data-act="ex" data-id="${esc(exId)}">How to do it</a></div></div>
+          <div class="target">${sl.sets} × ${esc(sl.reps)}</div></div>
+        ${uniq.length > 1 && !mine.length ? `<div class="chips wrap">${uniq.map((o) => `<button class="chip sm ${o.ex === exId ? "on" : ""}" data-act="slot-pick" data-i="${i}" data-v="${o.ex}">${esc(o.label)}</button>`).join("")}</div>` : ""}
+        ${last ? `<div class="last">Last time: ${esc(summary(last))} (${esc(dayLabel(last.date))})</div>` : ""}
+        ${mine.map((l) => `<div class="ok" data-act="log-edit" data-id="${esc(l.id)}" style="cursor:pointer">✓ ${esc(summary(l))} <span class="small">· edit</span></div>`).join("")}
+        <button class="btn ${mine.length ? "" : "pri"} block" style="margin-top:10px;font-size:15px" data-act="slot-log" data-i="${i}">${mine.length ? "+ Log more sets" : "Log sets"}</button>
+      </div>`;
+    }).join("")}
+    <div class="pad">${finished ? `<div class="rest">✅ Finished ${esc(dayLabel(sess.date))}</div>` : `<button class="btn pri block" data-act="sess-finish">Finish workout</button>
+      <button class="btn block" style="margin-top:10px" data-act="sess-discard">${logs.length ? "Stop for now (keep what's logged)" : "Cancel this workout"}</button>`}</div>`;
+}
+function logSlot(i) {
+  const sess = S.sessions.find((x) => x.id === SESS.id), day = dayForSession(sess), sl = day.slots[i];
+  const exId = slotChoice(sl, sess, i);
+  openLog({ exId, session: { sessionId: sess.id, slot: i, planDay: day.name, target: { sets: sl.sets, reps: sl.reps, name: sl.name } } });
+}
+function finishSession(discard) {
+  const sess = S.sessions.find((x) => x.id === SESS.id);
+  if (!sess) return;
+  const logs = S.logs.filter((l) => l.sessionId === sess.id);
+  if (discard) {
+    if (!logs.length) { deleteDoc("sessions", sess.id); closeSheet(); toast("Workout cancelled"); return; }
+    closeSheet(); toast("Saved for later. Continue it from the Today tab."); return;
+  }
+  if (!logs.length && !confirm("Nothing is logged yet. Finish anyway? The plan will move on to the next day.")) return;
+  saveDoc("sessions", { ...sess, finishedAt: Date.now() });
+  closeSheet();
+  const day = dayForSession(sess);
+  toast("💪 " + (day ? day.name : "Workout") + " done!", 3000);
 }
 
 /* ---------- People & settings ---------- */
@@ -1015,7 +1287,7 @@ document.addEventListener("click", (e) => {
   switch (act) {
     case "close": closeSheet(); break;
     case "filter": S.filter = a.dataset.v; render(); break;
-    case "ex": openExercise(id); break;
+    case "ex": e.preventDefault(); openExercise(id); break;
     case "ex-new": openExEditor(null); break;
     case "ex-edit": openExEditor(id); break;
     case "ex-save": saveExercise(); break;
@@ -1086,6 +1358,27 @@ document.addEventListener("click", (e) => {
     case "quick-mic": listen(a, (txt) => { $("#quick").value = txt; openLog({ spoken: txt }); }); break;
     case "quick-go": { const v = $("#quick").value.trim(); if (v) openLog({ spoken: v }); else openLog({}); break; }
     case "people": openPeople(); break;
+    case "plans": e.preventDefault(); openPlans(); break;
+    case "plan-set": updateMe({ planId: id }); reopenTop(openPlans); render(); break;
+    case "plan-cardio": updateMe({ cardio: !me().cardio }); reopenTop(openPlans); render(); break;
+    case "plan-special": e.stopPropagation(); updateMe({ special: a.dataset.v }); reopenTop(openPlans); render(); break;
+    case "plan-days": openDayPicker(); break;
+    case "sess-start": startSession(+a.dataset.seq); break;
+    case "sess-open": openSession(id); break;
+    case "sess-finish": finishSession(false); break;
+    case "sess-discard": finishSession(true); break;
+    case "slot-pick": {
+      const sess = S.sessions.find((x) => x.id === SESS.id);
+      saveDoc("sessions", { ...sess, choices: { ...(sess.choices || {}), [a.dataset.i]: a.dataset.v } });
+      break;
+    }
+    case "slot-log": logSlot(+a.dataset.i); break;
+    case "hero": {
+      const ph = $("#hphoto", topSheet().el), dg = $("#hdiag", topSheet().el);
+      ph.classList.toggle("hide", a.dataset.v !== "photo"); dg.classList.toggle("hide", a.dataset.v === "photo");
+      a.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === a));
+      break;
+    }
     case "person": choosePerson(id); break;
     case "person-add": addPerson(); break;
     case "unit":
@@ -1121,6 +1414,7 @@ function rerender() {
     renderQueued = false;
     const q = document.activeElement && document.activeElement.id === "q";
     render();
+    refreshSessionSheet();
     if (q) { const el = $("#q"); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
   });
 }
@@ -1130,6 +1424,7 @@ function rerender() {
   subscribe("exercises", (arr) => { S.custom = arr.sort((a, b) => a.name.localeCompare(b.name)); rerender(); });
   subscribe("people", (arr) => { S.people = arr.sort((a, b) => a.name.localeCompare(b.name)); S.loaded.people = true; rerender(); });
   subscribe("media", (arr) => { S.media = Object.fromEntries(arr.map((m) => [m.id, m])); rerender(); });
+  subscribe("sessions", (arr) => { S.sessions = arr; rerender(); });
   render();
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();

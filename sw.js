@@ -1,5 +1,5 @@
 // Simple offline cache: network first, fall back to cache.
-const CACHE = "workouts-v1";
+const CACHE = "workouts-v2";
 self.addEventListener("install", () => { self.skipWaiting(); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(

@@ -4,6 +4,9 @@ A household workout tracker. It's a plain web page (no build step) that saves to
 
 - `index.html`: the app
 - `exercises.js`: the 15 built-in exercises (steps, tips, mistakes, alternatives) and the animated form diagrams
+- `exercises-more.js`: the extra exercises the plans use, plus cardio
+- `plans.js`: the 3/4/5/6-day Push Pull Legs plans and the Cardio goal
+- `photos.js` and `photos/`: exercise photos from Wikimedia Commons, with credits
 - `config.js`: Firebase settings and this app's household phrase
 - `firestore.rules`: the full Firebase rules (recipe app + workout app)
 - `sw.js`, `manifest.webmanifest`, `icon-*.png`: what makes it installable on a phone

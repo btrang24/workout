@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Recipe app (btrang24/1st). Keep as is.
+    match /households/{hid}/{document=**} {
+      allow read, write: if true;
+    }
+    // Workout app (this repo). Only people who know the household phrase
+    // in config.js can reach it; the list of gyms cannot be browsed.
+    match /gyms/{hid}/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

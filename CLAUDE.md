@@ -18,14 +18,14 @@ A household workout tracker. Static web app in `public/` (no build step), shared
 
 ## Test before showing anything
 
-- Run the app in Playwright before telling the owner something works. Serve `public/` over a small local HTTP server, not `file://`, so `/api/import-workout` can be intercepted. Use phone size (390×844).
+- Run `npm test` (from the repo root) before telling the owner something works, and add checks to `tests/` for anything new. The tests serve `public/` over a small local server (`tests/server.cjs`, which also switches Firebase off) at phone size (390×844). Modules don't load from `file://`.
 - This sandbox can't reach most of the internet. Fake what it can't reach instead of skipping the test:
   - Firebase (`www.gstatic.com`): abort it, so the app runs in "This device" (localStorage) mode.
   - `/api/import-workout`: mock it with `page.route` (a normal answer, a "couldn't read" 422, and an error).
   - The function itself: bundle it with esbuild and call its handler in Node, with `fetch` stubbed for Google's Gemini API and for YouTube, Reddit, TikTok and Instagram pages.
   - The live site, YouTube, Instagram, TikTok, Reddit and the real Gemini API can't be reached from here (only Wikimedia is allowed).
 - Look at the screenshots yourself before reporting.
-- Write screenshots and test scripts to the scratchpad, never inside the repo. Run tests from outside `public/`, because a stray `undefined/` folder once got committed that way.
+- Tests live in `tests/` and are committed (Netlify skips deploys for test-only changes). Screenshots go to `$SHOTS` or the system temp folder, never the repo. One-off debugging scripts go in the scratchpad.
 - When reporting, say honestly **what was tested for real and what was tested against fakes**, and what the owner should try on the real site to cover the rest.
 
 ## Pull requests and previews
@@ -43,11 +43,12 @@ A household workout tracker. Static web app in `public/` (no build step), shared
 ## Saving deploys
 
 - `netlify.toml` has an `ignore` rule under `[build]`, so commits that only change Markdown files (like this one or `README.md`) don't trigger a deploy. Don't remove it.
-- When a change touches the app, bump the cache name in `public/sw.js` (`workouts-vN`) so phones pick up the new version.
+- When a change touches anything in `public/`, bump `VERSION` in `public/sw.js`. The service worker serves the phone's saved copy until the version changes, so a missed bump means phones never see the update.
 
 ## Project notes
 
-- No framework and no build step for the app. Keep it that way. Script order in `index.html`: `config.js`, `exercises.js`, `exercises-more.js`, `plans.js`, `photos.js`, then the module.
+- No framework and no build step for the app. Keep it that way. Script order in `index.html`: `config.js`, `exercises.js`, `exercises-more.js`, `plans.js`, `photos.js`, then `js/main.js` (a module).
+- Follow `ARCHITECTURE.md`: one feature per file in `public/js/features/`. A feature registers itself with `view`, `action`, `slot`, `collection` and `hook` from `js/core/ui.js`, and is imported once in `js/main.js`. Core files never import features. Read logs through the lookups in `js/core/state.js` (`index()`, `logsFor`, `myLogs`); don't scan `S.logs` in screen code.
 - Firestore rules (`firestore.rules`) allow everything under `/gyms/{hid}/`. New collections need no rule change, but keep the `households` rule for the recipe app.
 - The site is public to anyone with the link. Nothing sensitive goes in it. Never put keys or secrets in code or in `netlify.toml`.
 - AI calls use Google's `@google/genai` SDK with the owner's key from the Netlify env var `GOOGLE_API_KEY` (or `GEMINI_API_KEY`), always sent straight to `generativelanguage.googleapis.com` so Netlify AI Gateway credits are never used. The SDK is listed in `external_node_modules` in `netlify.toml` (it can't be bundled). The function is rate-limited to 20 calls a minute per visitor; keep a limit like that.

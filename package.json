@@ -2,8 +2,11 @@
   "name": "our-workouts",
   "private": true,
   "type": "module",
-  "description": "Household workout tracker. The app is static files in public/; netlify/functions holds the video-import function.",
+  "description": "Household workout tracker. The app is static files in public/; netlify/functions holds the video-import function; tests/ holds the tests (npm test).",
   "dependencies": {
     "@google/genai": "2.32.0"
+  },
+  "scripts": {
+    "test": "node tests/run.cjs"
   }
 }

@@ -3,21 +3,25 @@
 A household workout tracker. It's a plain web page (no build step) that saves to the same Firebase project as the recipe app, under its own `/gyms/...` section.
 
 The app's files are in `public/` (that's the folder Netlify publishes):
-- `public/index.html`: the app
+- `public/index.html`: the page shell. It loads the data scripts below, `css/app.css`, and `js/main.js`
+- `public/js/core/`: shared parts (data storage, state and quick lookups, stats, screen plumbing, helpers)
+- `public/js/features/`: one file per feature (library, today, log, plans, video workouts, progress, history...). Each registers its own tab, buttons and cards. See `ARCHITECTURE.md`
+- `public/css/app.css`: all styles
 - `public/exercises.js`: the 15 built-in exercises (steps, tips, mistakes, alternatives) and the animated form diagrams
 - `public/exercises-more.js`: the extra exercises the plans use, plus cardio
 - `public/plans.js`: the 3/4/5/6-day Push Pull Legs plans and the Cardio goal
-- `public/photos.js` and `public/photos/`: exercise photos from Wikimedia Commons, with credits
+- `public/photos.js` and `public/photos/`: start/finish photos for each exercise (free-exercise-db collection)
 - `public/config.js`: Firebase settings and this app's household phrase
-- `public/sw.js`, `public/manifest.webmanifest`, `public/icon-*.png`: what makes it installable on a phone (and lets Android share links into it)
+- `public/sw.js`, `public/manifest.webmanifest`, `public/icon-*.png`: what makes it installable, opens it instantly and offline, and lets Android share links into it
 
 Outside `public/`:
 - `netlify/functions/import-workout.mts`: the "workout from a video" reader. It reads a YouTube / Instagram / TikTok / Reddit link (title, caption, YouTube transcript, Reddit post and comments) and asks Google Gemini (with the owner's own API key) to turn it into a list of exercises. For YouTube links Gemini also watches the video. Served at `/api/import-workout`.
 - `package.json`: the one library the reader needs (Google's Gemini SDK, `@google/genai`). Netlify installs it automatically.
+- `tests/`: automatic checks (`npm test`): the app in a phone-sized browser, offline start, and the video reader against a fake Gemini
 - `firestore.rules`: the full Firebase rules (recipe app + workout app)
 - `netlify.toml`: tells Netlify to publish `public/` and where the function is
 
-To try it on a computer without the shared database, set `firebase: null` in `public/config.js` and open `public/index.html`. Everything then saves in that browser only. (Reading videos needs the website version, because it runs on Netlify.)
+To try it on a computer, serve the `public/` folder with any small web server (for example `npx serve public`) and open it in a browser. Opening `index.html` as a file doesn't work, because browsers block modules from files. With `firebase: null` in `public/config.js`, everything saves in that browser only. Reading videos needs the website version, because it runs on Netlify.
 
 ## Netlify settings (how-to, for next time)
 

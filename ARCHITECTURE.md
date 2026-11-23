@@ -2,7 +2,11 @@
 
 How the app is organised, and the plan for the next round of features. Written before the work starts so every future change follows the same shape. (Markdown only, so changing this file doesn't cost a Netlify deploy.)
 
-## Where we are
+## Status
+
+- **Phase 0 done:** split into modules, lookups, history paging, offline-first service worker, tests in `tests/`.
+
+## Where we were (before phase 0)
 
 | Part | Today |
 |---|---|
@@ -114,7 +118,7 @@ Per-phone choices that shouldn't follow the person between devices stay in local
 | 2 | Progressive overload | `overload.js`, a pure function: last session + target range → suggestion. If every set reached the top of the range, add 5 lb / 2.5 kg (dumbbells: 5 lb / 2 kg); if not, keep the weight. Shown on session slots and pre-filled in the log sheet. |
 | 3 | Muscles this week | `muscles.js`. Each exercise gets a `muscleMap`. Count working sets per muscle Mon–Sun (primary = 1, secondary = ½). Body outline SVG (front/back) shaded by sets, plus a list. A Progress card plus a mini version on Today. |
 | 4 | Body weight | `bodyweight.js`. Quick entry, a chart (shared `charts.js`), weekly average and change. |
-| 5 | AI coach | `coach.mts` + `coach.js`, using **Google Gemini with the owner's own API key** (`GOOGLE_API_KEY`, the same key the video reader uses, set as a secret environment variable in Netlify, scope Functions; never in code or chat), through Google's official `@google/genai` SDK. The model name comes from `GEMINI_MODEL`, with a sensible Flash default, so it can change without a code edit. The phone sends a **compact summary** (last 8 weeks per exercise, plan, body weight), not raw logs. The answer is in plain English. Rate-limited like the importer. Billing is on the owner's Google account, not Netlify credits. If the key is missing, the coach card says so and links to the setup steps. |
+| 5 | AI coach (decided: Gemini inside the app) | `coach.mts` + `coach.js`, using **Google Gemini with the owner's own API key** (`GOOGLE_API_KEY`, the same key the video reader uses, set as a secret environment variable in Netlify, scope Functions; never in code or chat), through Google's official `@google/genai` SDK. The model name comes from `GEMINI_MODEL`, with a sensible Flash default, so it can change without a code edit. The phone sends a **compact summary** (last 8 weeks per exercise, plan, body weight), not raw logs. The answer is in plain English. Rate-limited like the importer. Billing is on the owner's Google account, not Netlify credits. If the key is missing, the coach card says so and links to the setup steps. |
 | 6 | Import from Strong / Hevy / FitNotes | `importer.js`. Parses their CSV exports on the phone. Names are matched with the existing alias matcher; unknown names become custom exercises. A preview screen shows what will be imported; everything is tagged with `source` so it can be undone in one tap. |
 | 7 | Workout mode | `workoutmode.js`. A full-screen view over a session: one exercise at a time, big buttons for ✓ set, rest timer, next/previous, and a photo. Uses the same session data, so leaving it loses nothing. |
 | 8 | Tick-to-repeat sets | In `log.js`. Sets are pre-filled from the overload suggestion or last time and show a big ✓. One tap saves the set as is and starts the rest timer. Editing a number is still one tap away. |

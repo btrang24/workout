@@ -1,7 +1,7 @@
 [build]
   publish = "public"
-  # Skip deploys when a commit only changes Markdown files (CLAUDE.md, README.md).
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude)*.md'"
+  # Skip deploys when a commit only changes Markdown files (CLAUDE.md, README.md) or tests.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude)*.md' ':(exclude)tests/'"
 
 [functions]
   directory = "netlify/functions"

@@ -1,6 +1,6 @@
 # Working on Our Workouts
 
-A household workout tracker. Static web app in `public/` (no build step), shared data in Firebase (`/gyms/{householdId}/...`), one Netlify function (`netlify/functions/import-workout.mts`) that reads workout videos using Claude through Netlify AI Gateway. See `README.md` for the file map and the Netlify how-to.
+A household workout tracker. Static web app in `public/` (no build step), shared data in Firebase (`/gyms/{householdId}/...`), one Netlify function (`netlify/functions/import-workout.mts`) that reads workout videos using Google Gemini with the owner's own API key. See `README.md` for the file map and the Netlify how-to.
 
 - Live site: https://workoutbaobao.netlify.app (Netlify project `workoutbaobao`, production branch `main`)
 - Repo: `btrang24/workout`
@@ -22,8 +22,8 @@ A household workout tracker. Static web app in `public/` (no build step), shared
 - This sandbox can't reach most of the internet. Fake what it can't reach instead of skipping the test:
   - Firebase (`www.gstatic.com`): abort it, so the app runs in "This device" (localStorage) mode.
   - `/api/import-workout`: mock it with `page.route` (a normal answer, a "couldn't read" 422, and an error).
-  - The function itself: bundle it with esbuild and call its handler in Node. Point `ANTHROPIC_BASE_URL` at a local fake server, and stub `fetch` for YouTube, Reddit, TikTok and Instagram pages.
-  - The live site, YouTube, Instagram, TikTok, Reddit and the real AI can't be reached from here (only Wikimedia is allowed).
+  - The function itself: bundle it with esbuild and call its handler in Node, with `fetch` stubbed for Google's Gemini API and for YouTube, Reddit, TikTok and Instagram pages.
+  - The live site, YouTube, Instagram, TikTok, Reddit and the real Gemini API can't be reached from here (only Wikimedia is allowed).
 - Look at the screenshots yourself before reporting.
 - Write screenshots and test scripts to the scratchpad, never inside the repo. Run tests from outside `public/`, because a stray `undefined/` folder once got committed that way.
 - When reporting, say honestly **what was tested for real and what was tested against fakes**, and what the owner should try on the real site to cover the rest.
@@ -32,7 +32,7 @@ A household workout tracker. Static web app in `public/` (no build step), shared
 
 - When a batch of changes is ready, open a pull request from your branch into `main`, or update the existing open one. Group related work into one PR; don't open one per small change.
 - Give the owner the Netlify deploy preview link `https://deploy-preview-<PR number>--workoutbaobao.netlify.app`, plus a short list of what to try on it.
-- Previews are free. A production deploy (anything merged to `main`) costs **15 of the owner's 300 monthly Netlify credits**. Reading a video with AI also uses credits, roughly 15–25 per video. Keep both in mind.
+- Previews are free. A production deploy (anything merged to `main`) costs **15 of the owner's 300 monthly Netlify credits**. Video reading uses the owner's Gemini key (billed by Google), not Netlify credits. Keep it that way: don't route AI through Netlify AI Gateway.
 
 ## Publishing
 
@@ -50,4 +50,5 @@ A household workout tracker. Static web app in `public/` (no build step), shared
 - No framework and no build step for the app. Keep it that way. Script order in `index.html`: `config.js`, `exercises.js`, `exercises-more.js`, `plans.js`, `photos.js`, then the module.
 - Firestore rules (`firestore.rules`) allow everything under `/gyms/{hid}/`. New collections need no rule change, but keep the `households` rule for the recipe app.
 - The site is public to anyone with the link. Nothing sensitive goes in it. Never put keys or secrets in code or in `netlify.toml`.
-- AI calls use the Anthropic SDK with no API key (Netlify AI Gateway injects it). The function is rate-limited to 20 calls a minute per visitor; keep a limit like that.
+- AI calls use Google's `@google/genai` SDK with the owner's key from the Netlify env var `GOOGLE_API_KEY` (or `GEMINI_API_KEY`), always sent straight to `generativelanguage.googleapis.com` so Netlify AI Gateway credits are never used. The SDK is listed in `external_node_modules` in `netlify.toml` (it can't be bundled). The function is rate-limited to 20 calls a minute per visitor; keep a limit like that.
+- To test the function, bundle it with esbuild using `--external:@google/genai` and run it from the repo folder, with `fetch` stubbed for `generativelanguage.googleapis.com` and the video sites.

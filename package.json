@@ -4,6 +4,6 @@
   "type": "module",
   "description": "Household workout tracker. The app is static files in public/; netlify/functions holds the video-import function.",
   "dependencies": {
-    "@anthropic-ai/sdk": "1.6.0"
+    "@google/genai": "2.32.0"
   }
 }

@@ -12,8 +12,8 @@ The app's files are in `public/` (that's the folder Netlify publishes):
 - `public/sw.js`, `public/manifest.webmanifest`, `public/icon-*.png`: what makes it installable on a phone (and lets Android share links into it)
 
 Outside `public/`:
-- `netlify/functions/import-workout.mts`: the "workout from a video" reader. It reads a YouTube / Instagram / TikTok / Reddit link (title, caption, YouTube transcript, Reddit post and comments) and asks Claude, through Netlify's built-in AI Gateway, to turn it into a list of exercises. Served at `/api/import-workout`.
-- `package.json`: the one library the reader needs (Anthropic's SDK). Netlify installs it automatically.
+- `netlify/functions/import-workout.mts`: the "workout from a video" reader. It reads a YouTube / Instagram / TikTok / Reddit link (title, caption, YouTube transcript, Reddit post and comments) and asks Google Gemini (with the owner's own API key) to turn it into a list of exercises. For YouTube links Gemini also watches the video. Served at `/api/import-workout`.
+- `package.json`: the one library the reader needs (Google's Gemini SDK, `@google/genai`). Netlify installs it automatically.
 - `firestore.rules`: the full Firebase rules (recipe app + workout app)
 - `netlify.toml`: tells Netlify to publish `public/` and where the function is
 
@@ -42,6 +42,8 @@ Site: https://workoutbaobao.netlify.app · Dashboard: https://app.netlify.com/pr
 - On GitHub, open the repo and go to **Settings → General → Default branch**. Tap the two-arrows button, choose `main`, then **Update**.
 
 **Workouts from videos (AI)**
-- Uses Netlify AI Gateway: no API key needed. It's paid for with the team's Netlify credits (about 15-25 credits per video read, roughly 10 cents). On the Free plan, keep an eye on **Usage** in the Netlify dashboard; if credits run out, the site is paused until the next month.
-- If the app says "the AI service isn't switched on", check the team's **AI features** setting in Netlify is on, then redeploy.
+- Uses **your own Gemini API key**, so it's billed to your Google account (Gemini's free tier usually covers personal use) and never uses Netlify credits. The function talks to Google directly, so Netlify's AI Gateway is never used.
+- Setup: in Netlify, open the project, then **Manage**, and find **Environment variables**. Add `GOOGLE_API_KEY` with your key from aistudio.google.com, scope **Functions**, marked **Secret**. Then redeploy. `GEMINI_API_KEY` also works.
+- Optional: `GEMINI_MODEL` picks the Gemini model (default `gemini-flash-latest`; if that name isn't available, it falls back to `gemini-2.5-flash`).
+- If the app says "video reading isn't set up", the key is missing; "Google didn't accept the key" means it's wrong or disabled.
 - Each visitor can read at most 20 videos a minute (set in the function), so a stranger with the link can't run up a big bill quickly.

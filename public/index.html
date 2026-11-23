@@ -1226,9 +1226,9 @@ function openImport(pre = {}) {
       <div id="imstatus"></div>
       <p class="small" style="text-align:center"><a href="#" data-act="rt-new">Or type the workout in yourself</a></p>
       <div class="lbl" style="margin-top:16px">How it works</div>
-      <ul class="bul good"><li>The app reads the video's title, caption and, for YouTube, what's said in it.</li>
-        <li>AI turns that into a list of exercises with sets and reps, matched to your exercise library.</li>
-        <li>You check it and fix anything before it's saved. It can't watch the picture, so moves that are only shown (never said or written) can be missed.</li></ul>
+      <ul class="bul good"><li>For YouTube, AI watches the video itself. For other sites, it reads the title and caption.</li>
+        <li>Google Gemini turns that into a list of exercises with sets and reps, matched to your exercise library.</li>
+        <li>You check it and fix anything before it's saved. Instagram and TikTok videos can't be watched, only their captions, so moves that are only shown there can be missed.</li></ul>
     </div>`;
   openSheet(html);
   if (pre.auto && (pre.url || pre.text)) runImport();

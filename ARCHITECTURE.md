@@ -6,6 +6,7 @@ How the app is organised, and the plan for the next round of features. Written b
 
 - **Phase 0 done:** split into modules, lookups, history paging, offline-first service worker, tests in `tests/`.
 - **Phase 1 done:** `overload.js` (suggestions), tick-to-repeat sets in `log.js`, `timer.js`, `records.js`, `wakelock.js`, `workoutmode.js`. Settings live on the "You & settings" sheet via `slot("settings")`; the session screen has `slot("session-top")`.
+- **Phase 2 done:** `muscles.js` (weekly sets per muscle + body map; Progress and Today), `bodyweight.js` (collection `bodyweight`), `theme.js` (dark mode via colour variables in `app.css`). The Progress tab is now built from `slot("progress")` sections.
 
 ## Where we were (before phase 0)
 

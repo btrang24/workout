@@ -8,7 +8,7 @@ export const EQUIP = ["None", "Barbell", "Dumbbells", "Kettlebell", "Machine", "
 export const GROUP_EMOJI = { Legs: "🦵", Chest: "💪", Back: "🚣", Shoulders: "🏋️", Arms: "💪", Core: "🧘", Cardio: "🏃", "Full body": "🤸" };
 export const S = {
   tab: "library", q: "", filter: "All",
-  logs: [], custom: [], people: [], media: {}, sessions: [], routines: [],
+  logs: [], custom: [], people: [], media: {}, sessions: [], routines: [], bodyweight: [],
   loaded: { people: false },
   personId: localStorage.getItem("wk:person") || "",
   unit: localStorage.getItem("wk:unit") || "lb",

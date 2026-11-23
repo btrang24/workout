@@ -1,17 +1,21 @@
 import { S, exById, logsFor, myLogs } from "../core/state.js";
 import { METRICS, fmtMetric, lastLog, personalBest, series, setLabel, summary } from "../core/stats.js";
-import { action, render, view } from "../core/ui.js";
+import { action, render, slot, slots, view } from "../core/ui.js";
 import { $, conv, dayLabel, esc, fmtClock, num, shortDate } from "../core/util.js";
 
 /* ---------- Progress ---------- */
-export function viewProgress() {
+/** Progress tab = its sections in order (muscles this week, exercise chart, body weight...). */
+export const viewProgress = () => slots("progress");
+
+/** Exercise chart section. */
+export function exerciseProgress() {
   const withData = [];
   const seen = new Set();
   for (const l of myLogs().sort((a, b) => (b.ts || 0) - (a.ts || 0))) {
     if (seen.has(l.exId)) continue; seen.add(l.exId);
     const ex = exById(l.exId); if (ex) withData.push(ex);
   }
-  if (!withData.length) return `<div class="empty"><div class="big">📈</div>Log an exercise a few times and your progress chart shows up here.</div>`;
+  if (!withData.length) return `<div class="dayh">Exercise progress</div><div class="empty"><div class="big">📈</div>Log an exercise a few times and your progress chart shows up here.</div>`;
   if (!withData.find((e) => e.id === S.progEx)) S.progEx = withData[0].id;
   const ex = exById(S.progEx);
   const mets = METRICS[ex.kind] || METRICS.weight;
@@ -22,6 +26,7 @@ export function viewProgress() {
   const metName = mets.find((m) => m.id === S.progMetric).name;
   const recent = logsFor(ex.id).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
   return `
+    <div class="dayh">Exercise progress</div>
     <div class="pad"><div class="f" style="margin:4px 0 0"><select id="progex" aria-label="Exercise">${withData.map((e) => `<option value="${esc(e.id)}" ${e.id === ex.id ? "selected" : ""}>${esc(e.name)}</option>`).join("")}</select></div></div>
     <div class="chips">${mets.map((m) => `<button class="chip sm ${m.id === S.progMetric ? "on" : ""}" data-act="metric" data-v="${m.id}">${m.name}</button>`).join("")}</div>
     <div class="chartbox"><div class="ctitle">${esc(metName)} per day${ex.kind === "weight" && S.progMetric !== "vol" ? " (" + S.unit + ")" : ""}</div>${chartSvg(data)}</div>
@@ -50,16 +55,16 @@ export function chartSvg(data) {
   const isTime = S.progMetric === "long" || S.progMetric === "ttime";
   const tickLbl = (v) => isTime ? fmtClock(v) : (v >= 10000 ? Math.round(v / 1000) + "k" : num(v));
   let g = "";
-  for (let v = lo; v <= hi + 1e-9; v += step) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="#ece7dd"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="#66737a">${tickLbl(v)}</text>`;
+  for (let v = lo; v <= hi + 1e-9; v += step) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${tickLbl(v)}</text>`;
   const xl = data.length === 1 ? [data[0]] : [data[0], data[data.length - 1]];
-  g += xl.map((d, i) => `<text x="${x(d)}" y="${H - 7}" text-anchor="${data.length === 1 ? "middle" : i ? "end" : "start"}" font-size="11" fill="#66737a">${shortDate(d.date)}</text>`).join("");
+  g += xl.map((d, i) => `<text x="${x(d)}" y="${H - 7}" text-anchor="${data.length === 1 ? "middle" : i ? "end" : "start"}" font-size="11" fill="var(--muted)">${shortDate(d.date)}</text>`).join("");
   chartPts = data.map((d) => ({ x: x(d), y: y(d.v), d }));
   const path = chartPts.map((p, i) => (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1)).join(" ");
   const maxI = vals.indexOf(Math.max(...vals));
-  const dots = chartPts.map((p, i) => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${i === maxI ? "var(--hot)" : "var(--acc)"}" stroke="#fff" stroke-width="2"/>`).join("");
+  const dots = chartPts.map((p, i) => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${i === maxI ? "var(--hot)" : "var(--acc)"}" stroke="var(--card)" stroke-width="2"/>`).join("");
   const lastP = chartPts[chartPts.length - 1];
   const lbl = `<text id="lastlbl" x="${Math.min(lastP.x, W - R)}" y="${lastP.y - 9}" text-anchor="end" font-size="12" font-weight="700" fill="var(--ink)">${esc(fmtMetric(lastP.d.v, S.progMetric))}</text>`;
-  return `<svg id="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Progress chart">${g}<path d="${path}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"/><line id="xh" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#9aa5ab" stroke-dasharray="3 3" class="hide"/>${dots}${lbl}<rect x="0" y="0" width="${W}" height="${H}" fill="transparent"/></svg><div class="tip hide" id="tip"></div>`;
+  return `<svg id="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Progress chart">${g}<path d="${path}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"/><line id="xh" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" class="hide"/>${dots}${lbl}<rect x="0" y="0" width="${W}" height="${H}" fill="transparent"/></svg><div class="tip hide" id="tip"></div>`;
 }
 export function wireChart() {
   const svg = $("#chart"), tip = $("#tip"), xh = $("#xh"), lbl = $("#lastlbl");
@@ -88,4 +93,5 @@ export function wireChart() {
 /* ---------- buttons ---------- */
 action("metric", (a, e, id) => { S.progMetric = a.dataset.v; render(); });
 
+slot("progress", 20, exerciseProgress);
 view("progress", { order: 3, title: "Progress", icon: "📈", label: "Progress", render: viewProgress, after: wireChart });

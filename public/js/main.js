@@ -20,6 +20,10 @@ import "./features/timer.js";
 import "./features/wakelock.js";
 import "./features/records.js";
 import "./features/workoutmode.js";
+// Progress and looks (phase 2)
+import "./features/muscles.js";
+import "./features/bodyweight.js";
+import "./features/theme.js";
 
 await initStore();
 startCollections();

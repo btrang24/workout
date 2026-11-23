@@ -2,16 +2,22 @@
 
 A household workout tracker. It's a plain web page (no build step) that saves to the same Firebase project as the recipe app, under its own `/gyms/...` section.
 
-- `index.html`: the app
-- `exercises.js`: the 15 built-in exercises (steps, tips, mistakes, alternatives) and the animated form diagrams
-- `exercises-more.js`: the extra exercises the plans use, plus cardio
-- `plans.js`: the 3/4/5/6-day Push Pull Legs plans and the Cardio goal
-- `photos.js` and `photos/`: exercise photos from Wikimedia Commons, with credits
-- `config.js`: Firebase settings and this app's household phrase
-- `firestore.rules`: the full Firebase rules (recipe app + workout app)
-- `sw.js`, `manifest.webmanifest`, `icon-*.png`: what makes it installable on a phone
+The app's files are in `public/` (that's the folder Netlify publishes):
+- `public/index.html`: the app
+- `public/exercises.js`: the 15 built-in exercises (steps, tips, mistakes, alternatives) and the animated form diagrams
+- `public/exercises-more.js`: the extra exercises the plans use, plus cardio
+- `public/plans.js`: the 3/4/5/6-day Push Pull Legs plans and the Cardio goal
+- `public/photos.js` and `public/photos/`: exercise photos from Wikimedia Commons, with credits
+- `public/config.js`: Firebase settings and this app's household phrase
+- `public/sw.js`, `public/manifest.webmanifest`, `public/icon-*.png`: what makes it installable on a phone (and lets Android share links into it)
 
-To try it on a computer without the shared database, set `firebase: null` in `config.js` and open `index.html`. Everything then saves in that browser only.
+Outside `public/`:
+- `netlify/functions/import-workout.mts`: the "workout from a video" reader. It reads a YouTube / Instagram / TikTok / Reddit link (title, caption, YouTube transcript, Reddit post and comments) and asks Claude, through Netlify's built-in AI Gateway, to turn it into a list of exercises. Served at `/api/import-workout`.
+- `package.json`: the one library the reader needs (Anthropic's SDK). Netlify installs it automatically.
+- `firestore.rules`: the full Firebase rules (recipe app + workout app)
+- `netlify.toml`: tells Netlify to publish `public/` and where the function is
+
+To try it on a computer without the shared database, set `firebase: null` in `public/config.js` and open `public/index.html`. Everything then saves in that browser only. (Reading videos needs the website version, because it runs on Netlify.)
 
 ## Netlify settings (how-to, for next time)
 
@@ -30,7 +36,12 @@ Site: https://workoutbaobao.netlify.app · Dashboard: https://app.netlify.com/pr
 
 **Don't touch**
 - On the **Repository** tab, don't tap **Change** or **Unlink**. That disconnects the app from GitHub.
-- Leave Build command (not set), Publish directory (`.`) and Base directory (not set) as they are.
+- Leave Build command (not set) and Base directory (not set) as they are. The publish folder (`public`) is set in `netlify.toml`, which overrides the dashboard's Publish directory.
 
 **GitHub default branch**
 - On GitHub, open the repo and go to **Settings → General → Default branch**. Tap the two-arrows button, choose `main`, then **Update**.
+
+**Workouts from videos (AI)**
+- Uses Netlify AI Gateway: no API key needed. It's paid for with the team's Netlify credits (about 15-25 credits per video read, roughly 10 cents). On the Free plan, keep an eye on **Usage** in the Netlify dashboard; if credits run out, the site is paused until the next month.
+- If the app says "the AI service isn't switched on", check the team's **AI features** setting in Netlify is on, then redeploy.
+- Each visitor can read at most 20 videos a minute (set in the function), so a stranger with the link can't run up a big bill quickly.

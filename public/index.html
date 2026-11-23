@@ -140,6 +140,10 @@ nav.tabs button.on{color:var(--acc);font-weight:600}
 .alt .an{font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .alt .ad{font-size:14px;color:var(--muted);margin-top:3px}
 .alt .aa{margin-top:8px}
+.rx{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:10px 12px;margin-bottom:10px}
+.rx .f{margin-bottom:6px}
+.rxh{display:flex;gap:6px;align-items:center}
+.rxh select{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:600}
 .vid{position:relative;padding-top:56.25%;border-radius:var(--r);overflow:hidden;background:#000;margin-bottom:10px}
 .vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .myphoto{width:100%;border-radius:var(--r);display:block;margin-bottom:10px}
@@ -353,7 +357,7 @@ const EQUIP = ["None", "Barbell", "Dumbbells", "Kettlebell", "Machine", "Cable",
 const GROUP_EMOJI = { Legs: "🦵", Chest: "💪", Back: "🚣", Shoulders: "🏋️", Arms: "💪", Core: "🧘", Cardio: "🏃", "Full body": "🤸" };
 const S = {
   tab: "library", q: "", filter: "All",
-  logs: [], custom: [], people: [], media: {}, sessions: [],
+  logs: [], custom: [], people: [], media: {}, sessions: [], routines: [],
   loaded: { people: false },
   personId: localStorage.getItem("wk:person") || "",
   unit: localStorage.getItem("wk:unit") || "lb",
@@ -629,7 +633,7 @@ function viewToday() {
     if (!recent.includes(l.exId) && exById(l.exId)) recent.push(l.exId);
     if (recent.length >= 8) break;
   }
-  return `${planCards()}
+  return `${planCards()}${routineCard()}
     <div class="dayh">Quick log</div>
     <div class="quick" style="margin-top:0">
       <div class="q1"><input id="quick" placeholder="e.g. bench press 3 sets of 8 at 135" enterkeyhint="go" autocomplete="off">${micBtn("quick-mic")}<button class="btn pri" data-act="quick-go">Go</button></div>
@@ -982,6 +986,7 @@ function nextSeqIndex(plan) {
   return last ? (Number(last.seq) + 1) % n : 0;
 }
 function dayForSession(sess) {
+  if (sess.routineId) return sess.day || null; // workouts from videos keep a copy of the routine as it was when started
   const plan = planById(sess.planId);
   if (!plan) return null;
   const owner = S.people.find((p) => p.id === sess.personId);
@@ -1128,7 +1133,8 @@ function renderSession() {
   const finished = !!sess.finishedAt;
   box.innerHTML = `
     <div class="sbar"><button class="btn sm" data-act="close">‹ Back</button><div class="sp">${esc(day.name)}</div>${finished ? `<span style="width:60px"></span>` : `<button class="btn sm pri" data-act="sess-finish">Finish</button>`}</div>
-    <div class="det" style="padding-bottom:4px"><div class="small">${esc(plan ? plan.short : "")} · ${esc(day.focus)} · ${esc(dayLabel(sess.date))}</div>
+    <div class="det" style="padding-bottom:4px"><div class="small">${esc(plan ? plan.short : "From a video")}${day.focus ? " · " + esc(day.focus) : ""} · ${esc(dayLabel(sess.date))}</div>
+    ${sess.routineId ? `${day.notes ? `<div class="note" style="margin-top:8px">${esc(day.notes)}</div>` : ""}${day.url ? `<div class="small" style="margin-top:6px"><a href="${esc(day.url)}" target="_blank" rel="noopener">▶ Watch the video</a></div>` : ""}` : ""}
     <div class="bar2" style="margin-top:8px"><i style="width:${Math.round((doneCount / day.slots.length) * 100)}%;background:var(--ok)"></i></div>
     <div class="small">${doneCount} of ${day.slots.length} done · do them in this order</div></div>
     ${day.slots.map((sl, i) => {
@@ -1137,11 +1143,12 @@ function renderSession() {
       const last = !mine.length && lastLog(exId);
       const uniq = [...new Map(sl.options.map((o) => [o.ex, o])).values()];
       return `<div class="slot ${mine.length ? "done" : ""}">
-        <div class="tg">${i + 1}. ${esc(sl.body)} · ${esc(sl.name)}</div>
+        <div class="tg">${i + 1}. ${esc(sl.body)}${sl.name ? " · " + esc(sl.name) : ""}</div>
         <div class="top" style="margin-top:6px"><div class="th" data-act="ex" data-id="${esc(exId)}">${ex ? thumb(ex) : ""}</div>
           <div style="flex:1;min-width:0"><div class="nm">${esc(slotLabel(sl, exId))}</div><div class="small"><a href="#" data-act="ex" data-id="${esc(exId)}">How to do it</a></div></div>
           <div class="target">${sl.sets} × ${esc(sl.reps)}</div></div>
         ${uniq.length > 1 && !mine.length ? `<div class="chips wrap">${uniq.map((o) => `<button class="chip sm ${o.ex === exId ? "on" : ""}" data-act="slot-pick" data-i="${i}" data-v="${o.ex}">${esc(o.label)}</button>`).join("")}</div>` : ""}
+        ${sl.note ? `<div class="last">${esc(sl.note)}</div>` : ""}
         ${last ? `<div class="last">Last time: ${esc(summary(last))} (${esc(dayLabel(last.date))})</div>` : ""}
         ${mine.map((l) => `<div class="ok" data-act="log-edit" data-id="${esc(l.id)}" style="cursor:pointer">✓ ${esc(summary(l))} <span class="small">· edit</span></div>`).join("")}
         <button class="btn ${mine.length ? "" : "pri"} block" style="margin-top:10px;font-size:15px" data-act="slot-log" data-i="${i}">${mine.length ? "+ Log more sets" : "Log sets"}</button>
@@ -1168,6 +1175,222 @@ function finishSession(discard) {
   closeSheet();
   const day = dayForSession(sess);
   toast("💪 " + (day ? day.name : "Workout") + " done!", 3000);
+}
+
+/* ============================================================
+   Workouts from videos (YouTube, Instagram, TikTok, Reddit...)
+   A link is read on the server (/api/import-workout), AI turns it into a
+   list of exercises, you check it, and it's saved for the whole household.
+   ============================================================ */
+const SRC_ICON = { youtube: "▶️", instagram: "📸", tiktok: "🎵", reddit: "💬" };
+function srcKind(url) {
+  const u = String(url || "").toLowerCase();
+  if (ytId(u)) return "youtube";
+  if (u.includes("instagram.com")) return "instagram";
+  if (u.includes("tiktok.com")) return "tiktok";
+  if (u.includes("reddit.com") || u.includes("redd.it")) return "reddit";
+  return u ? "link" : "";
+}
+const rtIcon = (r) => SRC_ICON[srcKind(r.url)] || "🎬";
+function routineCard() {
+  return `<div class="dayh">Workouts from videos</div>
+    <div style="padding:0 16px">
+      ${S.routines.map((r) => `<div class="pl" data-act="rt-open" data-id="${esc(r.id)}"><div class="t">${rtIcon(r)} ${esc(r.name)}</div>
+        <div class="d">${(r.slots || []).length} exercises${r.focus ? " · " + esc(r.focus) : ""}</div></div>`).join("")}
+      <button class="btn block" data-act="rt-import">＋ Add a workout from a video</button>
+      ${S.routines.length ? "" : `<div class="small" style="margin-top:6px">Saw a workout on YouTube, Instagram, TikTok or Reddit? Paste the link and the app turns it into a workout you can follow and log.</div>`}
+    </div>`;
+}
+
+function openImport(pre = {}) {
+  const html = `
+    <div class="sbar"><button class="btn sm" data-act="close">Cancel</button><div class="sp">Workout from a video</div><span style="width:60px"></span></div>
+    <div class="ed">
+      <div class="f"><label for="imurl">Video link</label><input id="imurl" inputmode="url" autocomplete="off" placeholder="Paste a YouTube, Instagram, TikTok or Reddit link" value="${esc(pre.url || "")}"></div>
+      <div class="f"><label for="imtext">Caption or exercise list (optional)</label><textarea id="imtext" style="min-height:80px" placeholder="e.g. 3 rounds: 12 goblet squats, 10 push-ups, 30 sec plank">${esc(pre.text || "")}</textarea>
+        <div class="hint">Helps when a site won't let the app read it (Instagram often blocks this). Copy the caption from the post and paste it here.</div></div>
+      <button class="btn pri block" data-act="im-go" id="imgo">✨ Read the video</button>
+      <div id="imstatus"></div>
+      <p class="small" style="text-align:center"><a href="#" data-act="rt-new">Or type the workout in yourself</a></p>
+      <div class="lbl" style="margin-top:16px">How it works</div>
+      <ul class="bul good"><li>The app reads the video's title, caption and, for YouTube, what's said in it.</li>
+        <li>AI turns that into a list of exercises with sets and reps, matched to your exercise library.</li>
+        <li>You check it and fix anything before it's saved. It can't watch the picture, so moves that are only shown (never said or written) can be missed.</li></ul>
+    </div>`;
+  openSheet(html);
+  if (pre.auto && (pre.url || pre.text)) runImport();
+}
+async function runImport() {
+  const el = topSheet().el;
+  const url = $("#imurl", el).value.trim(), text = $("#imtext", el).value.trim();
+  const status = $("#imstatus", el), btn = $("#imgo", el);
+  if (!url && !text) { toast("Paste a link first."); return; }
+  const show = (html) => { if (el.isConnected) status.innerHTML = html; };
+  if (location.protocol === "file:") {
+    show(`<div class="note" style="margin-top:10px">Reading videos only works on the website version of the app. You can still <a href="#" data-act="rt-new">type the workout in yourself</a>.</div>`);
+    return;
+  }
+  btn.disabled = true; btn.textContent = "Reading…";
+  show(`<div class="rest" style="margin-top:10px">⏳ Reading the video and working out the exercises. This can take up to a minute…</div>`);
+  try {
+    const library = allEx().map((e) => ({ id: e.id, name: e.name, group: e.group, kind: e.kind }));
+    const r = await fetch("/api/import-workout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url, text, library }) });
+    let j = null;
+    try { j = await r.json(); } catch { j = { message: r.status === 404 ? "The video reader isn't set up on this site yet." : "Something went wrong reading that link. Try again." }; }
+    if (!el.isConnected) return;
+    if (!r.ok) {
+      show(`<div class="note" style="margin-top:10px">${esc(j.message || "That didn't work. Try again.")}${j.error === "couldnt_read" ? "" : ` You can also <a href="#" data-act="rt-new">type the workout in yourself</a>.`}</div>`);
+      return;
+    }
+    const rt = j.routine || {};
+    if (!rt.found || !(rt.exercises || []).length) {
+      show(`<div class="note" style="margin-top:10px">Couldn't find a workout in that${j.source && j.source.title ? ` (“${esc(j.source.title)}”)` : ""}. If the exercises are only shown in the video, paste the caption or type the list above and try again.</div>`);
+      return;
+    }
+    show("");
+    openRoutineEditor({
+      fromAI: true, name: rt.name || (j.source && j.source.title) || "Video workout", focus: rt.focus || "", notes: rt.notes || "", url,
+      sourceTitle: (j.source && j.source.title) || "", sourceKind: (j.source && j.source.kind) || srcKind(url),
+      items: rt.exercises.map((x) => ({
+        ex: x.libraryId && exById(x.libraryId) ? x.libraryId : "", newName: x.name || "", name: x.name || "",
+        group: GROUPS.includes(x.group) ? x.group : "Full body", kind: x.kind || "reps",
+        sets: x.sets || 3, reps: x.reps || "10", note: x.note || "",
+      })),
+    });
+  } catch (e) {
+    console.error(e);
+    show(`<div class="note" style="margin-top:10px">Couldn't reach the app's server. Check your internet connection and try again.</div>`);
+  } finally {
+    if (el.isConnected) { btn.disabled = false; btn.textContent = "✨ Read the video"; }
+  }
+}
+
+const blankItem = () => ({ ex: "", newName: "", name: "", group: "Full body", kind: "reps", sets: 3, reps: "10", note: "" });
+function openRoutineEditor(draft) {
+  const el = openSheet(`<div id="rtbody"></div>`);
+  el._rt = JSON.parse(JSON.stringify(draft));
+  if (!el._rt.items.length) el._rt.items.push(blankItem());
+  renderRoutineEditor(el);
+}
+function routineToDraft(r) {
+  return {
+    id: r.id, createdAt: r.createdAt, addedBy: r.addedBy, name: r.name, focus: r.focus || "", notes: r.notes || "", url: r.url || "",
+    sourceTitle: r.sourceTitle || "", sourceKind: r.sourceKind || "",
+    items: (r.slots || []).map((sl) => {
+      const o = sl.options[0] || {}, ex = exById(o.ex);
+      return { ex: ex ? o.ex : "", newName: ex ? "" : o.label || "", name: o.label || "", group: sl.body || "Full body", kind: (ex && ex.kind) || "reps", sets: sl.sets, reps: sl.reps, note: sl.note || "" };
+    }),
+  };
+}
+function renderRoutineEditor(el) {
+  const st = el._rt;
+  const lib = allEx().slice().sort((a, b) => a.name.localeCompare(b.name));
+  const opts = (sel) => GROUPS.map((g) => {
+    const xs = lib.filter((e) => e.group === g);
+    return xs.length ? `<optgroup label="${esc(g)}">${xs.map((e) => `<option value="${esc(e.id)}" ${e.id === sel ? "selected" : ""}>${esc(e.name)}</option>`).join("")}</optgroup>` : "";
+  }).join("");
+  const sel = (f, i, vals, cur) => `<select data-rf="${f}" data-i="${i}">${vals.map(([v, n]) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`;
+  $("#rtbody", el).innerHTML = `
+    <div class="sbar"><button class="btn sm" data-act="close">Cancel</button><div class="sp">${st.id ? "Edit workout" : "Check the workout"}</div><button class="btn sm pri" data-act="rt-save">Save</button></div>
+    <div class="ed">
+      ${st.fromAI ? `<div class="note" style="margin-bottom:12px">✨ Here's what the AI found${st.sourceTitle ? ` in “${esc(st.sourceTitle)}”` : ""}. Check it against the video, fix anything that's off, then tap <b>Save</b>.</div>` : ""}
+      <div class="f"><label>Name</label><input data-rt="name" value="${esc(st.name)}" placeholder="e.g. 20-minute dumbbell legs"></div>
+      <div class="f"><label>Focus</label><input data-rt="focus" value="${esc(st.focus)}" placeholder="e.g. Legs and glutes"></div>
+      <div class="f"><label>Video link</label><input data-rt="url" inputmode="url" value="${esc(st.url)}" placeholder="Optional"></div>
+      <div class="f"><label>How to do it</label><textarea data-rt="notes" style="min-height:60px" placeholder="Rounds, rest times, warm-up… (optional)">${esc(st.notes)}</textarea></div>
+      <div class="lbl">Exercises, in order</div>
+      ${st.items.map((it, i) => `<div class="rx">
+        <div class="rxh"><b>${i + 1}.</b><select data-rf="ex" data-i="${i}"><option value="" ${it.ex ? "" : "selected"}>➕ New exercise${it.newName ? ": " + esc(it.newName) : ""}</option>${opts(it.ex)}</select>
+          ${i ? `<button class="btn sm" data-act="rt-up" data-i="${i}" aria-label="Move up">↑</button>` : ""}<button class="btn sm" data-act="rt-rm" data-i="${i}" aria-label="Remove">✕</button></div>
+        ${it.ex ? "" : `<div class="f" style="margin-top:8px"><label>New exercise name</label><input data-rf="name" data-i="${i}" value="${esc(it.name)}" placeholder="e.g. Bear crawl"></div>
+          <div class="row2"><div class="f"><label>Muscle group</label>${sel("group", i, GROUPS.map((g) => [g, g]), it.group)}</div>
+          <div class="f"><label>Track it by</label>${sel("kind", i, [["weight", "Weight × reps"], ["reps", "Reps"], ["time", "Time"]], it.kind)}</div></div>`}
+        <div class="row2" style="margin-top:8px"><div class="f"><label>Sets</label><input data-rf="sets" data-i="${i}" inputmode="numeric" value="${esc(it.sets)}"></div>
+          <div class="f"><label>Reps or time</label><input data-rf="reps" data-i="${i}" value="${esc(it.reps)}" placeholder="10, 8-12, 30 sec"></div></div>
+        <div class="f"><label>Note</label><input data-rf="note" data-i="${i}" value="${esc(it.note)}" placeholder="Optional"></div>
+      </div>`).join("")}
+      <button class="btn block" data-act="rt-add">＋ Add an exercise</button>
+      ${st.id ? `<button class="btn dan block" style="margin-top:10px" data-act="rt-del" data-id="${esc(st.id)}">Delete this workout</button>` : ""}
+    </div>`;
+}
+function saveRoutine() {
+  const el = topSheet().el, st = el._rt;
+  const name = (st.name || "").trim();
+  if (!name) { toast("Give the workout a name."); return; }
+  const items = st.items.filter((it) => it.ex || (it.name || "").trim());
+  if (!items.length) { toast("Add at least one exercise."); return; }
+  const slots = items.map((it) => {
+    let exId = it.ex, label = "", group = it.group;
+    if (exId) { const ex = exById(exId); label = ex.name; group = ex.group; }
+    else {
+      label = it.name.trim();
+      const hit = allEx().find((e) => e.name.toLowerCase() === label.toLowerCase());
+      exId = hit ? hit.id : saveDoc("exercises", {
+        id: "c_" + newId(), name: label, group: GROUPS.includes(it.group) ? it.group : "Full body", equip: "Other", kind: it.kind || "reps",
+        photo: "", video: st.url || "", muscles: "", steps: it.note ? [it.note] : [], tips: [], mistakes: [], alts: [], aliases: [label.toLowerCase()],
+      });
+    }
+    return { body: group || "", name: "", sets: Math.max(1, Math.round(Number(it.sets) || 3)), reps: String(it.reps || "").trim() || "10", note: (it.note || "").trim(), options: [{ label, ex: exId }] };
+  });
+  const id = saveDoc("routines", {
+    id: st.id || undefined, name, focus: (st.focus || "").trim(), notes: (st.notes || "").trim(), url: (st.url || "").trim(),
+    sourceTitle: st.sourceTitle || "", sourceKind: st.sourceKind || srcKind(st.url), slots,
+    createdAt: st.createdAt || Date.now(), addedBy: st.addedBy || myName(),
+  });
+  while (sheets.length) closeSheet();
+  toast("Saved " + name);
+  if (S.tab !== "today") { S.tab = "today"; render(); }
+  setTimeout(() => openRoutine(id), 120);
+}
+
+function openRoutine(id) {
+  const r = S.routines.find((x) => x.id === id);
+  if (!r) return;
+  const vid = ytId(r.url);
+  const html = `
+    <div class="sbar"><button class="btn sm" data-act="close">‹ Back</button><div class="sp">${esc(r.name)}</div><button class="btn sm" data-act="rt-edit" data-id="${esc(r.id)}">Edit</button></div>
+    <div class="det">
+      ${vid ? `<div class="vid"><iframe src="https://www.youtube-nocookie.com/embed/${vid}" allowfullscreen title="Video"></iframe></div>` : r.url ? `<a class="btn block" style="margin-bottom:10px" href="${esc(r.url)}" target="_blank" rel="noopener">${rtIcon(r)} Open the video</a>` : ""}
+      <h2>${esc(r.name)}</h2>
+      <div class="small">${esc([r.focus, r.addedBy ? "added by " + r.addedBy : "", r.sourceTitle && r.sourceTitle !== r.name ? "from “" + r.sourceTitle + "”" : ""].filter(Boolean).join(" · "))}</div>
+      ${r.notes ? `<div class="note" style="margin-top:10px">${esc(r.notes)}</div>` : ""}
+      <div class="sec"><ol class="slots">${(r.slots || []).map((sl) => {
+        const o = sl.options[0] || {};
+        return `<li><div class="nm"><a href="#" data-act="ex" data-id="${esc(o.ex)}">${esc(o.label)}</a><div class="sub">${esc(sl.body)}${sl.note ? " · " + esc(sl.note) : ""}</div></div><div class="sr">${sl.sets} × ${esc(sl.reps)}</div></li>`;
+      }).join("")}</ol></div>
+      <div class="sec"><button class="btn pri block" data-act="rt-start" data-id="${esc(r.id)}">Start this workout</button></div>
+    </div>`;
+  openSheet(html);
+}
+function startRoutine(id) {
+  const r = S.routines.find((x) => x.id === id);
+  if (!r) return;
+  if (!me()) { openPeople(() => startRoutine(id)); toast("First, who's working out?"); return; }
+  const act = activeSession();
+  if (act) {
+    if (!confirm("You have a workout in progress. Continue that one instead?\n\nTap Cancel to start this one anyway (the other keeps what's logged).")) {
+      saveDoc("sessions", { ...act, finishedAt: Date.now() });
+    } else { while (sheets.length) closeSheet(); setTimeout(() => openSession(act.id), 50); return; }
+  }
+  const sid = saveDoc("sessions", {
+    personId: S.personId, personName: myName(), routineId: r.id, seq: 0, dayKey: "R", dayName: r.name,
+    day: { key: "R:" + r.id, name: r.name, focus: r.focus || "", notes: r.notes || "", url: r.url || "", slots: r.slots || [] },
+    date: isoDay(), startedAt: Date.now(), finishedAt: null, choices: {},
+  });
+  while (sheets.length) closeSheet();
+  setTimeout(() => openSession(sid), 50);
+}
+// Shared to the app from another app (Android "Share" → Workouts)
+function handleShare() {
+  const p = new URLSearchParams(location.search);
+  if (!["share_url", "share_text", "share_title"].some((k) => p.has(k))) return;
+  const all = ["share_url", "share_text", "share_title"].map((k) => p.get(k) || "").join(" ").trim();
+  const m = all.match(/https?:\/\/\S+/);
+  const url = m ? m[0] : "";
+  const rest = (url ? all.replace(url, "") : all).trim();
+  history.replaceState(null, "", location.pathname);
+  S.tab = "today"; render();
+  openImport({ url, text: rest.length > 25 ? rest : "", auto: true });
 }
 
 /* ---------- People & settings ---------- */
@@ -1373,6 +1596,27 @@ document.addEventListener("click", (e) => {
       break;
     }
     case "slot-log": logSlot(+a.dataset.i); break;
+    case "rt-import": openImport(); break;
+    case "im-go": runImport(); break;
+    case "rt-new": {
+      e.preventDefault();
+      const u = $("#imurl", topSheet() ? topSheet().el : document);
+      openRoutineEditor({ name: "", focus: "", notes: "", url: u ? u.value.trim() : "", items: [] });
+      break;
+    }
+    case "rt-open": openRoutine(id); break;
+    case "rt-start": startRoutine(id); break;
+    case "rt-edit": { const r = S.routines.find((x) => x.id === id); if (r) openRoutineEditor(routineToDraft(r)); break; }
+    case "rt-save": saveRoutine(); break;
+    case "rt-del":
+      if (confirm("Delete this workout? Anything you've logged from it stays in your history.")) { deleteDoc("routines", id); while (sheets.length) closeSheet(); toast("Deleted"); }
+      break;
+    case "rt-add": { const el = topSheet().el; el._rt.items.push(blankItem()); renderRoutineEditor(el); break; }
+    case "rt-rm": { const el = topSheet().el; el._rt.items.splice(+a.dataset.i, 1); renderRoutineEditor(el); break; }
+    case "rt-up": {
+      const el = topSheet().el, i = +a.dataset.i, it = el._rt.items;
+      [it[i - 1], it[i]] = [it[i], it[i - 1]]; renderRoutineEditor(el); break;
+    }
     case "hero": {
       const ph = $("#hphoto", topSheet().el), dg = $("#hdiag", topSheet().el);
       ph.classList.toggle("hide", a.dataset.v !== "photo"); dg.classList.toggle("hide", a.dataset.v === "photo");
@@ -1388,6 +1632,22 @@ document.addEventListener("click", (e) => {
     case "metric": S.progMetric = a.dataset.v; render(); break;
   }
 });
+// Routine editor fields: keep the draft in sync as you type.
+function syncRoutineField(e) {
+  const t = e.target;
+  if (!t.dataset || !(t.dataset.rt || t.dataset.rf)) return;
+  const sh = t.closest(".sheet"), st = sh && sh._rt;
+  if (!st) return;
+  if (t.dataset.rt) { st[t.dataset.rt] = t.value; return; }
+  const it = st.items[+t.dataset.i];
+  it[t.dataset.rf] = t.value;
+  if (t.dataset.rf === "ex" && e.type === "change") {
+    if (t.value) { const ex = exById(t.value); it.kind = ex.kind; it.group = ex.group; }
+    renderRoutineEditor(sh);
+  }
+}
+document.addEventListener("input", syncRoutineField);
+document.addEventListener("change", syncRoutineField);
 document.addEventListener("change", async (e) => {
   const a = e.target.closest("input[data-act='media-photo']");
   if (!a || !a.files[0]) return;
@@ -1425,7 +1685,9 @@ function rerender() {
   subscribe("people", (arr) => { S.people = arr.sort((a, b) => a.name.localeCompare(b.name)); S.loaded.people = true; rerender(); });
   subscribe("media", (arr) => { S.media = Object.fromEntries(arr.map((m) => [m.id, m])); rerender(); });
   subscribe("sessions", (arr) => { S.sessions = arr; rerender(); });
+  subscribe("routines", (arr) => { S.routines = arr.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); rerender(); });
   render();
+  handleShare();
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
 </script>

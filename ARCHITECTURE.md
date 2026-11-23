@@ -5,6 +5,7 @@ How the app is organised, and the plan for the next round of features. Written b
 ## Status
 
 - **Phase 0 done:** split into modules, lookups, history paging, offline-first service worker, tests in `tests/`.
+- **Phase 1 done:** `overload.js` (suggestions), tick-to-repeat sets in `log.js`, `timer.js`, `records.js`, `wakelock.js`, `workoutmode.js`. Settings live on the "You & settings" sheet via `slot("settings")`; the session screen has `slot("session-top")`.
 
 ## Where we were (before phase 0)
 

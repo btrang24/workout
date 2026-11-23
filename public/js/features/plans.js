@@ -3,9 +3,10 @@ import { thumb } from "../core/media.js";
 import { S, exById, me, myLogs, myName } from "../core/state.js";
 import { lastLog, summary } from "../core/stats.js";
 import { deleteDoc, saveDoc } from "../core/store.js";
-import { action, closeSheet, collection, hook, openSheet, render, reopenTop, rerender, sheets, slot, slots } from "../core/ui.js";
+import { action, closeSheet, collection, hook, openSheet, render, reopenTop, rerender, runHooks, sheets, slot, slots } from "../core/ui.js";
 import { $, dayLabel, esc, isoDay, toast } from "../core/util.js";
 import { openLog } from "./log.js";
+import { suggest, suggestLabel } from "./overload.js";
 import { openPeople } from "./people.js";
 
 /* ============================================================
@@ -161,8 +162,9 @@ export function startSession(seq) {
 }
 export let SESS = null; // { id, el }
 export function openSession(id) {
-  const el = openSheet(`<div id="sessbody"></div>`, () => { SESS = null; });
+  const el = openSheet(`<div id="sessbody"></div>`, () => { SESS = null; runHooks("sessionClose"); });
   SESS = { id, el };
+  runHooks("sessionOpen", id);
   renderSession();
 }
 export function refreshSessionSheet() { if (SESS) renderSession(); }
@@ -179,9 +181,11 @@ export function renderSession() {
     <div class="det" style="padding-bottom:4px"><div class="small">${esc(plan ? plan.short : "From a video")}${day.focus ? " · " + esc(day.focus) : ""} · ${esc(dayLabel(sess.date))}</div>
     ${sess.routineId ? `${day.notes ? `<div class="note" style="margin-top:8px">${esc(day.notes)}</div>` : ""}${day.url ? `<div class="small" style="margin-top:6px"><a href="${esc(day.url)}" target="_blank" rel="noopener">▶ Watch the video</a></div>` : ""}` : ""}
     <div class="bar2" style="margin-top:8px"><i style="width:${Math.round((doneCount / day.slots.length) * 100)}%;background:var(--ok)"></i></div>
-    <div class="small">${doneCount} of ${day.slots.length} done · do them in this order</div></div>
+    <div class="small">${doneCount} of ${day.slots.length} done · do them in this order</div>
+    ${finished ? "" : slots("session-top", sess)}</div>
     ${day.slots.map((sl, i) => {
       const exId = slotChoice(sl, sess, i), ex = exById(exId);
+      let sg;
       const mine = logs.filter((l) => l.slot === i);
       const last = !mine.length && lastLog(exId);
       const uniq = [...new Map(sl.options.map((o) => [o.ex, o])).values()];
@@ -193,6 +197,7 @@ export function renderSession() {
         ${uniq.length > 1 && !mine.length ? `<div class="chips wrap">${uniq.map((o) => `<button class="chip sm ${o.ex === exId ? "on" : ""}" data-act="slot-pick" data-i="${i}" data-v="${o.ex}">${esc(o.label)}</button>`).join("")}</div>` : ""}
         ${sl.note ? `<div class="last">${esc(sl.note)}</div>` : ""}
         ${last ? `<div class="last">Last time: ${esc(summary(last))} (${esc(dayLabel(last.date))})</div>` : ""}
+        ${!mine.length && ex && (sg = suggest(ex, sl, last)) ? `<div class="last sgline">💡 Today: <b>${esc(suggestLabel(ex, sg, S.unit))}</b>${sg.up ? " ⬆" : ""}</div>` : ""}
         ${mine.map((l) => `<div class="ok" data-act="log-edit" data-id="${esc(l.id)}" style="cursor:pointer">✓ ${esc(summary(l))} <span class="small">· edit</span></div>`).join("")}
         <button class="btn ${mine.length ? "" : "pri"} block" style="margin-top:10px;font-size:15px" data-act="slot-log" data-i="${i}">${mine.length ? "+ Log more sets" : "Log sets"}</button>
       </div>`;

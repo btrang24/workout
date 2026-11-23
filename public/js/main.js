@@ -15,6 +15,11 @@ import "./features/dictation.js";
 import "./features/people.js";
 import "./features/plans.js";
 import "./features/routines.js";
+// In the gym (phase 1)
+import "./features/timer.js";
+import "./features/wakelock.js";
+import "./features/records.js";
+import "./features/workoutmode.js";
 
 await initStore();
 startCollections();

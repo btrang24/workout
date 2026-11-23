@@ -8,7 +8,7 @@ export function logCard(l, showWho) {
   const ex = exById(l.exId);
   return `<div class="card" data-act="log-edit" data-id="${esc(l.id)}">
     <div class="th">${ex ? thumb(ex) : "🏋️"}</div>
-    <div class="bd"><div class="tt">${esc(ex ? ex.name : l.exName || "Exercise")}</div>
+    <div class="bd"><div class="tt">${esc(ex ? ex.name : l.exName || "Exercise")}${l.pr ? ` <span class="prb" title="Personal best">🏆 PB</span>` : ""}</div>
     <div class="sm">${esc(summary(l))}</div>
     ${l.planDay ? `<div class="mt">📋 ${esc(l.planDay)}</div>` : ""}
     ${showWho && l.personName ? `<div class="mt">${esc(l.personName)}</div>` : ""}

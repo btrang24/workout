@@ -201,3 +201,33 @@ form.ed,.ed{padding:14px 16px}
 .small{font-size:13px;color:var(--muted)}
 .note{background:#fff8e6;border-radius:10px;padding:10px 12px;font-size:14px}
 a{color:var(--acc)}
+
+/* ---------- Phase 1: in the gym ---------- */
+.set .tick{flex:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:#fff;color:var(--muted);font-size:20px;font-weight:700;cursor:pointer;margin-left:auto}
+.set .tick.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.set .tick + .x{margin-left:0}
+.set.done{border-color:var(--ok);background:var(--ok-l)}
+.set.pre input{color:var(--muted);font-style:italic;background:#faf8f4}
+.lastt.sg{background:var(--hot-l);color:var(--ink)}
+.sgline{color:var(--hot)!important}
+.restpill{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;display:flex;align-items:center;gap:6px;background:var(--ink);color:#fff;border-radius:99px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.25);overflow:hidden;min-width:260px}
+.restpill .bar{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.12);transition:width .25s linear;pointer-events:none}
+.restpill .t{flex:1;text-align:center;line-height:1.1;position:relative}
+.restpill .t b{font-size:22px;font-variant-numeric:tabular-nums;display:block}
+.restpill .t span{font-size:11px;opacity:.8}
+.restpill button{position:relative;border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:99px;padding:8px 10px;font-weight:700;cursor:pointer}
+.prpop{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);animation:prin .25s ease-out}
+.prpop .prcard{background:var(--card);border-radius:20px;padding:24px 28px;text-align:center;max-width:80%;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.prpop .cup{font-size:64px;animation:prcup .6s ease-out}
+.prpop .h{font-size:22px;font-weight:800;margin:6px 0}
+.prpop .v{font-size:16px;margin-bottom:6px}
+@keyframes prin{from{opacity:0}to{opacity:1}}
+@keyframes prcup{0%{transform:scale(.3) rotate(-20deg)}70%{transform:scale(1.2) rotate(8deg)}100%{transform:scale(1)}}
+.prb{font-size:11px;background:var(--hot-l);color:var(--hot);border-radius:99px;padding:1px 6px;vertical-align:middle;font-weight:700}
+.wmph{aspect-ratio:4/3;background:var(--dg-bg);display:flex;align-items:center;justify-content:center;font-size:70px;overflow:hidden;cursor:pointer}
+.wmph img,.wmph svg{width:100%;height:100%;object-fit:cover}
+.wmtarget{font-size:16px;margin:4px 0 6px}
+.wmsets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.wmbig{font-size:20px!important;padding:18px!important;margin-top:12px;border-radius:16px!important}
+.wmnav .btn:disabled{opacity:.4}
+body:has(.sheet) .restpill{bottom:calc(14px + env(safe-area-inset-bottom))}

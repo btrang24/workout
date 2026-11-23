@@ -59,19 +59,29 @@ export function fmtMetric(v, metricId) {
   if (metricId === "vol") return Math.round(v).toLocaleString() + " " + S.unit;
   return num(v) + " " + S.unit;
 }
+/** Score one set for personal bests: { score, label }, or null if it doesn't count. */
+export function setScore(ex, st, u = "lb") {
+  if (ex.kind === "time") return { score: Number(st.s) || 0, label: fmtTime(st.s) };
+  if (ex.kind === "reps") return { score: (Number(st.r) || 0) + conv(st.w || 0, u, "lb") / 1000, label: (st.r || 0) + " reps" + (st.w ? " +" + num(conv(st.w, u, S.unit)) + " " + S.unit : "") };
+  if (!(st.r > 0)) return null;
+  return { score: conv(st.w || 0, u, "lb") + (Number(st.r) || 0) / 1000, label: num(conv(st.w, u, S.unit)) + " " + S.unit + " × " + st.r };
+}
+/** Best set ever for an exercise (this person). Memoized per data change. */
 export function personalBest(ex) {
   const memo = index().best, key = ex.id + "|" + S.unit;
   if (memo.has(key)) return memo.get(key);
   let best = null;
   for (const l of logsFor(ex.id)) for (const st of l.sets || []) {
-    const u = l.unit || "lb";
-    let score, label;
-    if (ex.kind === "time") { score = Number(st.s) || 0; label = fmtTime(st.s); }
-    else if (ex.kind === "reps") { score = (Number(st.r) || 0) + conv(st.w || 0, u, "lb") / 1000; label = (st.r || 0) + " reps" + (st.w ? " +" + num(conv(st.w, u, S.unit)) + " " + S.unit : ""); }
-    else { if (!(st.r > 0)) continue; score = conv(st.w || 0, u, "lb") + (Number(st.r) || 0) / 1000; label = num(conv(st.w, u, S.unit)) + " " + S.unit + " × " + st.r; }
-    if (!best || score > best.score) best = { score, label, date: l.date };
+    const sc = setScore(ex, st, l.unit || "lb");
+    if (sc && (!best || sc.score > best.score)) best = { ...sc, date: l.date };
   }
   memo.set(key, best);
+  return best;
+}
+/** Best set within one list of sets. */
+export function bestOf(ex, sets, u) {
+  let best = null;
+  for (const st of sets) { const sc = setScore(ex, st, u); if (sc && (!best || sc.score > best.score)) best = sc; }
   return best;
 }
 export function lastLog(exId) {

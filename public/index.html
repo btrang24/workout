@@ -82,6 +82,11 @@ nav.tabs button.on{color:var(--acc);font-weight:600}
 .hero{background:var(--dg-bg);position:relative}
 .hero svg{display:block;width:100%;max-height:46vh}
 .hero img{display:block;width:100%;max-height:50vh;object-fit:cover}
+.flip{position:relative}
+.hero .flip img{aspect-ratio:3/2;height:auto;max-height:50vh;object-fit:contain;background:#1b1b1b}
+.flip img.b{position:absolute;inset:0;opacity:0;transition:opacity .35s}
+.flip.on img.b{opacity:1}
+.flip .phase{position:absolute;left:10px;bottom:10px}
 .heroseg{position:absolute;right:10px;bottom:10px;font-size:13px}
 .heroseg button{padding:5px 10px}
 .credit{font-size:11px;color:var(--muted);padding:4px 16px 0}
@@ -774,12 +779,12 @@ function openExercise(id) {
   const html = `
     <div class="sbar"><button class="btn sm" data-act="close">‹ Back</button><div class="sp">${esc(ex.name)}</div>${ex.custom ? `<button class="btn sm" data-act="ex-edit" data-id="${esc(ex.id)}">Edit</button>` : `<span style="width:60px"></span>`}</div>
     <div class="hero">
-      ${bp ? `<div id="hphoto"><img src="${esc(bp.src)}" alt="${esc(ex.name)}"></div>` : ""}
+      ${bp ? `<div id="hphoto" class="flip">${(bp.frames || [bp.src]).map((f, i) => `<img src="${esc(f)}" alt="${esc(ex.name)}${bp.frames && bp.frames.length > 1 ? (i ? ": finish position" : ": start position") : ""}" class="${i ? "b" : ""}">`).join("")}${bp.frames && bp.frames.length > 1 ? `<div class="phase" id="fphase">Start</div>` : ""}</div>` : ""}
       ${hasDiagram ? `<div id="hdiag" class="${bp ? "hide" : ""}">${drawSvg(ex, 0, "dg")}<div class="phase" id="phase">Start</div></div>` : ""}
       ${!bp && !hasDiagram ? (md.photo ? `<img src="${esc(md.photo)}" alt="${esc(ex.name)}">` : `<div style="font-size:70px;text-align:center;padding:30px">${ex.emoji || GROUP_EMOJI[ex.group] || "🏋️"}</div>`) : ""}
       ${bp && hasDiagram ? `<div class="seg heroseg"><button data-act="hero" data-v="photo" class="on">Photo</button><button data-act="hero" data-v="diag">Moving diagram</button></div>` : ""}
     </div>
-    ${bp ? `<div class="credit">Photo: <a href="${esc(bp.page)}" target="_blank" rel="noopener">${esc(bp.credit)}</a>${bp.license ? ", " + esc(bp.license) : ""}, Wikimedia Commons</div>` : ""}
+    ${bp ? `<div class="credit">Photo: <a href="${esc(bp.page)}" target="_blank" rel="noopener">${esc(bp.credit)}</a>${bp.license ? ", " + esc(bp.license) : ""}, ${esc(bp.source || "Wikimedia Commons")}</div>` : ""}
     <div class="det">
       <h2>${esc(ex.name)}</h2>
       <div class="tags"><span class="tag">${esc(ex.group)}</span>${isNoEquip(ex) ? `<span class="tag ok">No equipment</span>` : `<span class="tag">${esc(ex.equip || "")}</span>`}<span class="tag">${ex.kind === "time" ? "Timed" : ex.kind === "reps" ? "Reps" : "Weight × reps"}</span></div>
@@ -810,11 +815,19 @@ function openExercise(id) {
         <div class="small">Saved videos and photos are shared with your household.</div>
       </div>
     </div>`;
-  let stop = () => {};
-  const el = openSheet(html, () => stop());
+  let stop = () => {}, flipTimer = null;
+  const el = openSheet(html, () => { stop(); clearInterval(flipTimer); });
   if (hasDiagram) {
     const ph = $("#phase", el);
     stop = animate($(".hero svg", el), ex, (p) => { if (ph && p !== "move") ph.textContent = p === "start" ? "Start" : "Finish"; });
+  }
+  if (bp && bp.frames && bp.frames.length > 1) {
+    // Alternate the start and finish photos so the movement is easy to follow.
+    const box = $("#hphoto", el), lab = $("#fphase", el);
+    flipTimer = setInterval(() => {
+      const on = box.classList.toggle("on");
+      lab.textContent = on ? "Finish" : "Start";
+    }, 1400);
   }
 }
 /* ---------- Log a workout ---------- */

@@ -48,10 +48,10 @@ const iso = (n = 0) => { const d = new Date(); d.setDate(d.getDate() - n); const
     localStorage.setItem('wk:test:bodyweight', JSON.stringify(arr));
   }, [iso(20), iso(3)]);
   await p.reload(); await p.waitForTimeout(400); await p.click('nav [data-tab=progress]');
-  const stats = await p.locator('.chartbox').last().textContent();
+  const stats = await p.locator('.chartbox', { has: p.locator('#bwin') }).textContent();
   ok(/7-day average\s*182/.test(stats), '7-day average (181 and 183) = 182');
   ok(/30 days\s*-4/.test(stats), '30-day change = -4');
-  ok(await p.locator('.chartbox').last().locator('svg path').count() === 1, 'body weight chart drawn');
+  ok(await p.locator('.chartbox', { has: p.locator('#bwin') }).locator('svg path').count() === 1, 'body weight chart drawn');
   await shot('21-bodyweight', { fullPage: true });
 
   // ---------- Dark mode ----------

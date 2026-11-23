@@ -16,7 +16,8 @@ The app's files are in `public/` (that's the folder Netlify publishes):
 
 Outside `public/`:
 - `netlify/functions/import-workout.mts`: the "workout from a video" reader. It reads a YouTube / Instagram / TikTok / Reddit link (title, caption, YouTube transcript, Reddit post and comments) and asks Google Gemini (with the owner's own API key) to turn it into a list of exercises. For YouTube links Gemini also watches the video. Served at `/api/import-workout`.
-- `package.json`: the one library the reader needs (Google's Gemini SDK, `@google/genai`). Netlify installs it automatically.
+- `netlify/functions/coach.mts`: the AI coach on the Progress tab (Gemini, same key). `netlify/functions/_lib/gemini.mts` holds the Gemini access both functions share.
+- `package.json`: the one library the functions need (Google's Gemini SDK, `@google/genai`). Netlify installs it automatically.
 - `tests/`: automatic checks (`npm test`): the app in a phone-sized browser, offline start, and the video reader against a fake Gemini
 - `firestore.rules`: the full Firebase rules (recipe app + workout app)
 - `netlify.toml`: tells Netlify to publish `public/` and where the function is

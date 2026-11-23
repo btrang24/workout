@@ -1,6 +1,6 @@
 # Working on Our Workouts
 
-A household workout tracker. Static web app in `public/` (no build step), shared data in Firebase (`/gyms/{householdId}/...`), one Netlify function (`netlify/functions/import-workout.mts`) that reads workout videos using Google Gemini with the owner's own API key. See `README.md` for the file map and the Netlify how-to.
+A household workout tracker. Static web app in `public/` (no build step), shared data in Firebase (`/gyms/{householdId}/...`), two Netlify functions using Google Gemini with the owner's own API key: `import-workout.mts` (reads workout videos) and `coach.mts` (AI coach), sharing `netlify/functions/_lib/gemini.mts`. See `README.md` for the file map and the Netlify how-to.
 
 - Live site: https://workoutbaobao.netlify.app (Netlify project `workoutbaobao`, production branch `main`)
 - Repo: `btrang24/workout`
@@ -21,7 +21,7 @@ A household workout tracker. Static web app in `public/` (no build step), shared
 - Run `npm test` (from the repo root) before telling the owner something works, and add checks to `tests/` for anything new. The tests serve `public/` over a small local server (`tests/server.cjs`, which also switches Firebase off) at phone size (390×844). Modules don't load from `file://`.
 - This sandbox can't reach most of the internet. Fake what it can't reach instead of skipping the test:
   - Firebase (`www.gstatic.com`): abort it, so the app runs in "This device" (localStorage) mode.
-  - `/api/import-workout`: mock it with `page.route` (a normal answer, a "couldn't read" 422, and an error).
+  - `/api/import-workout` and `/api/coach`: mock them with `page.route` (normal answers and errors).
   - The function itself: bundle it with esbuild and call its handler in Node, with `fetch` stubbed for Google's Gemini API and for YouTube, Reddit, TikTok and Instagram pages.
   - The live site, YouTube, Instagram, TikTok, Reddit and the real Gemini API can't be reached from here (only Wikimedia is allowed).
 - Look at the screenshots yourself before reporting.
@@ -51,5 +51,5 @@ A household workout tracker. Static web app in `public/` (no build step), shared
 - Follow `ARCHITECTURE.md`: one feature per file in `public/js/features/`. A feature registers itself with `view`, `action`, `slot`, `collection` and `hook` from `js/core/ui.js`, and is imported once in `js/main.js`. Core files never import features. Read logs through the lookups in `js/core/state.js` (`index()`, `logsFor`, `myLogs`); don't scan `S.logs` in screen code.
 - Firestore rules (`firestore.rules`) allow everything under `/gyms/{hid}/`. New collections need no rule change, but keep the `households` rule for the recipe app.
 - The site is public to anyone with the link. Nothing sensitive goes in it. Never put keys or secrets in code or in `netlify.toml`.
-- AI calls use Google's `@google/genai` SDK with the owner's key from the Netlify env var `GOOGLE_API_KEY` (or `GEMINI_API_KEY`), always sent straight to `generativelanguage.googleapis.com` so Netlify AI Gateway credits are never used. The SDK is listed in `external_node_modules` in `netlify.toml` (it can't be bundled). The function is rate-limited to 20 calls a minute per visitor; keep a limit like that.
+- AI calls use Google's `@google/genai` SDK with the owner's key from the Netlify env var `GOOGLE_API_KEY` (or `GEMINI_API_KEY`), always sent straight to `generativelanguage.googleapis.com` so Netlify AI Gateway credits are never used. The SDK is listed in `external_node_modules` in `netlify.toml` (it can't be bundled). Each function is rate-limited to 20 calls a minute per visitor; keep a limit like that.
 - To test the function, bundle it with esbuild using `--external:@google/genai` and run it from the repo folder, with `fetch` stubbed for `generativelanguage.googleapis.com` and the video sites.

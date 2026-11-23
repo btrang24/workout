@@ -24,6 +24,9 @@ import "./features/workoutmode.js";
 import "./features/muscles.js";
 import "./features/bodyweight.js";
 import "./features/theme.js";
+// Extras (phase 3)
+import "./features/coach.js";
+import "./features/importer.js";
 
 await initStore();
 startCollections();

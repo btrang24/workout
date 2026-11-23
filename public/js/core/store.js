@@ -67,6 +67,24 @@ export function saveDoc(coll, obj) {
   }
   return id;
 }
+/** Save many documents at once (imports): one write locally, batches of 400 in Firebase. */
+export async function saveMany(coll, objs) {
+  const docs = objs.map((o) => { const d = { ...o, id: o.id || newId(), updatedAt: Date.now() }; for (const k in d) if (d[k] === undefined) delete d[k]; return d; });
+  if (store.mode === "cloud") {
+    const { db, fs } = fb;
+    for (let i = 0; i < docs.length; i += 400) {
+      const b = fs.writeBatch(db);
+      for (const d of docs.slice(i, i + 400)) b.set(fs.doc(db, ROOT, HID, coll, d.id), d);
+      await b.commit();
+    }
+  } else {
+    const byId = new Map(localLoad(coll).map((d) => [d.id, d]));
+    for (const d of docs) byId.set(d.id, d);
+    localSave(coll, [...byId.values()]);
+    window.dispatchEvent(new Event("wk-local-" + coll));
+  }
+  return docs.map((d) => d.id);
+}
 export function deleteDoc(coll, id) {
   if (store.mode === "cloud") {
     const { db, fs } = fb;

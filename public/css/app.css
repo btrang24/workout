@@ -257,3 +257,9 @@ svg.body{display:block;width:100%;max-width:320px;margin:0 auto 8px}
 .mrow .n{text-align:right;font-weight:700}
 .mweek{text-align:left;font-size:14px}
 .chartbox svg + svg{margin-top:8px}
+
+/* ---------- Phase 3: coach ---------- */
+.coach .q{background:var(--acc);color:#fff;border-radius:14px 14px 4px 14px;padding:8px 12px;margin:0 0 8px auto;max-width:85%;width:fit-content}
+.coach .a{background:var(--field-2);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:8px 12px;margin:0 0 10px;max-width:92%}
+.coach .a p{margin:0 0 6px}.coach .a ul{margin:0 0 6px;padding-left:20px}
+.coach textarea{flex:1;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--field);resize:vertical}

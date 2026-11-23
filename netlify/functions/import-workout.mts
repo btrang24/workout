@@ -6,13 +6,10 @@
 // Uses the owner's own Gemini API key (Netlify environment variable GOOGLE_API_KEY,
 // or GEMINI_API_KEY), so it's billed to their Google account and never uses Netlify
 // AI Gateway credits. Served at /api/import-workout.
-import { GoogleGenAI, ApiError, MediaResolution } from "@google/genai";
+import { MediaResolution } from "@google/genai";
+import { errorReply, generate, geminiKey, json, NO_KEY } from "./_lib/gemini.mts";
 import type { Config } from "@netlify/functions";
 
-// Talk to Google directly. This also stops Netlify's AI Gateway (which bills Netlify
-// credits) from being used, even if it injects its own Gemini settings.
-const GOOGLE_URL = "https://generativelanguage.googleapis.com/";
-const FALLBACK_MODEL = "gemini-2.5-flash"; // used only if the main model name isn't available
 const MAX_SOURCE = 30000; // characters of video text sent to the AI
 const UA = "Mozilla/5.0 (compatible; household-workout-app/1.0)";
 const GROUPS = ["Legs", "Chest", "Back", "Shoulders", "Arms", "Core", "Cardio", "Full body"];
@@ -20,8 +17,6 @@ const GROUPS = ["Legs", "Chest", "Back", "Shoulders", "Arms", "Core", "Cardio", 
 type LibEx = { id: string; name: string; group?: string; kind?: string };
 type Source = { kind: string; title: string; author: string; parts: string[]; gotTranscript: boolean };
 
-const json = (data: unknown, status = 200) => Response.json(data, { status });
-const env = (k: string) => (process.env[k] || "").trim();
 
 export default async (req: Request) => {
   let body: any;
@@ -32,10 +27,7 @@ export default async (req: Request) => {
   if (!url && !pasted) return json({ error: "bad_request", message: "Paste a link or some text." }, 400);
   if (url && !/^https?:\/\//i.test(url)) return json({ error: "bad_request", message: "That doesn't look like a link." }, 400);
 
-  const apiKey = env("GOOGLE_API_KEY") || env("GEMINI_API_KEY");
-  if (!apiKey) {
-    return json({ error: "no_ai", message: "Video reading isn't set up yet: add your Gemini API key in Netlify (environment variable GOOGLE_API_KEY), then redeploy." }, 503);
-  }
+  if (!geminiKey()) return NO_KEY("Video reading");
 
   // 1. Read what we can from the link.
   let src: Source = { kind: "link", title: "", author: "", parts: [], gotTranscript: false };
@@ -105,33 +97,16 @@ Instructions:
     },
   };
 
-  const ai = new GoogleGenAI({ apiKey, httpOptions: { baseUrl: GOOGLE_URL } });
-  const models = [...new Set([env("GEMINI_MODEL") || "gemini-flash-latest", FALLBACK_MODEL])];
-  const ask = async (withVideo: boolean, timeout: number) => {
+  const ask = (withVideo: boolean, timeout: number) => {
     const parts: any[] = [];
     if (withVideo) parts.push({ fileData: { fileUri: `https://www.youtube.com/watch?v=${yt}` } });
     parts.push({ text: prompt(withVideo) });
-    let lastErr: unknown = null;
-    for (const model of models) {
-      try {
-        const r = await ai.models.generateContent({
-          model,
-          contents: [{ role: "user", parts }],
-          config: {
-            responseMimeType: "application/json",
-            responseJsonSchema: schema,
-            ...(withVideo ? { mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW } : {}),
-            httpOptions: { timeout },
-          },
-        });
-        return { r, model };
-      } catch (e) {
-        lastErr = e;
-        if (e instanceof ApiError && e.status === 404) continue; // model name not available: try the fallback
-        throw e;
-      }
-    }
-    throw lastErr;
+    return generate([{ role: "user", parts }], {
+      responseMimeType: "application/json",
+      responseJsonSchema: schema,
+      ...(withVideo ? { mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW } : {}),
+      httpOptions: { timeout },
+    });
   };
 
   let res: { r: any; model: string } | null = null;
@@ -142,13 +117,7 @@ Instructions:
   if (!res && (sourceText.length > 40 || pasted)) {
     try { res = await ask(false, 15000); } catch (e) { lastErr = e; }
   }
-  if (!res) {
-    console.error("Gemini call failed", lastErr);
-    const st = lastErr instanceof ApiError ? lastErr.status : 0;
-    if (st === 429) return json({ error: "busy", message: "Your Gemini key has hit its limit for now. Try again in a minute." }, 429);
-    if (st === 400 || st === 401 || st === 403) return json({ error: "no_ai", message: "Google didn't accept the Gemini API key. Check GOOGLE_API_KEY in Netlify." }, 503);
-    return json({ error: "ai_failed", message: "The AI couldn't read this one. Try again, or paste the caption." }, 502);
-  }
+  if (!res) return errorReply(lastErr, "The AI couldn't read this one. Try again, or paste the caption.");
   const reason = res.r.candidates?.[0]?.finishReason;
   if (reason === "SAFETY" || res.r.promptFeedback?.blockReason) return json({ error: "refused", message: "The AI wouldn't process this link. Try pasting the exercise list instead." }, 422);
   if (reason === "MAX_TOKENS") return json({ error: "ai_failed", message: "That workout was too long to read in one go. Paste just the exercise list." }, 422);

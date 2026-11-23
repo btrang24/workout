@@ -1,207 +1,543 @@
-// Exercise photos from Wikimedia Commons (free licenses). Credits are shown under each photo in the app.
+// Exercise photos: start and finish positions for each exercise, from the free-exercise-db
+// collection (https://github.com/yuhonas/free-exercise-db). `src` is the frame used on grid tiles.
 window.WORKOUT_PHOTOS = {
- "deadlift": {
-  "src": "photos/deadlift.jpg",
-  "credit": "Nenad Stojkovic",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Fit_young_man_doing_deadlift_exercise_in_gym.jpg"
+ "squat": {
+  "src": "photos/squat-1.jpg",
+  "frames": [
+   "photos/squat-0.jpg",
+   "photos/squat-1.jpg"
+  ],
+  "credit": "Barbell Full Squat",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "bench": {
-  "src": "photos/bench.jpg",
-  "credit": "Al dayan",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Bench_Press-_Almog_Dayan.JPG"
+  "src": "photos/bench-1.jpg",
+  "frames": [
+   "photos/bench-0.jpg",
+   "photos/bench-1.jpg"
+  ],
+  "credit": "Barbell Bench Press - Medium Grip",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "deadlift": {
+  "src": "photos/deadlift-0.jpg",
+  "frames": [
+   "photos/deadlift-0.jpg",
+   "photos/deadlift-1.jpg"
+  ],
+  "credit": "Barbell Deadlift",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "ohp": {
-  "src": "photos/ohp.jpg",
-  "credit": "RangerJim",
-  "license": "CC BY-SA 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:How_to_do_an_Overhead_Press.jpg"
+  "src": "photos/ohp-1.jpg",
+  "frames": [
+   "photos/ohp-0.jpg",
+   "photos/ohp-1.jpg"
+  ],
+  "credit": "Standing Military Press",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "row": {
-  "src": "photos/row.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Barbell-rear-delt-row-1.png"
+  "src": "photos/row-1.jpg",
+  "frames": [
+   "photos/row-0.jpg",
+   "photos/row-1.jpg"
+  ],
+  "credit": "Bent Over Barbell Row",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "pullup": {
-  "src": "photos/pullup.jpg",
-  "credit": "PTPioneer",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_pull-ups_-_48441668177.jpg"
+  "src": "photos/pullup-1.jpg",
+  "frames": [
+   "photos/pullup-0.jpg",
+   "photos/pullup-1.jpg"
+  ],
+  "credit": "Pullups",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "pushup": {
-  "src": "photos/pushup.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Push-ups-1.png"
+  "src": "photos/pushup-1.jpg",
+  "frames": [
+   "photos/pushup-0.jpg",
+   "photos/pushup-1.jpg"
+  ],
+  "credit": "Pushups",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "plank": {
-  "src": "photos/plank.jpg",
-  "credit": "Jaykayfit",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Plank.jpg"
+  "src": "photos/plank-1.jpg",
+  "frames": [
+   "photos/plank-1.jpg"
+  ],
+  "credit": "Plank",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "lunge": {
-  "src": "photos/lunge.jpg",
-  "credit": "Yashjoshi2102",
-  "license": "CC BY-SA 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Sakshi_Malik_fitness_(lunge).jpg"
+  "src": "photos/lunge-1.jpg",
+  "frames": [
+   "photos/lunge-0.jpg",
+   "photos/lunge-1.jpg"
+  ],
+  "credit": "Dumbbell Lunges",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "curl": {
-  "src": "photos/curl.jpg",
-  "credit": "Shixart1985",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_biceps_curls_with_dumbbell_closeup.jpg"
+  "src": "photos/curl-1.jpg",
+  "frames": [
+   "photos/curl-0.jpg",
+   "photos/curl-1.jpg"
+  ],
+  "credit": "Dumbbell Bicep Curl",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "bridge": {
+  "src": "photos/bridge-1.jpg",
+  "frames": [
+   "photos/bridge-0.jpg",
+   "photos/bridge-1.jpg"
+  ],
+  "credit": "Butt Lift (Bridge)",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "latpulldown": {
-  "src": "photos/latpulldown.jpg",
-  "credit": "Tyler Read",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_lat_pulldown_exercise.jpg"
+  "src": "photos/latpulldown-1.jpg",
+  "frames": [
+   "photos/latpulldown-0.jpg",
+   "photos/latpulldown-1.jpg"
+  ],
+  "credit": "Wide-Grip Lat Pulldown",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "dips": {
-  "src": "photos/dips.jpg",
-  "credit": "PTPioneer",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_dips_Exercise.jpg"
+  "src": "photos/dips-1.jpg",
+  "frames": [
+   "photos/dips-0.jpg",
+   "photos/dips-1.jpg"
+  ],
+  "credit": "Dips - Triceps Version",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "calfraise": {
+  "src": "photos/calfraise-1.jpg",
+  "frames": [
+   "photos/calfraise-0.jpg",
+   "photos/calfraise-1.jpg"
+  ],
+  "credit": "Standing Barbell Calf Raise",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "dbbench": {
-  "src": "photos/dbbench.jpg",
-  "credit": "PTPioneer",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Personal_training_dumbbell_chest_press.jpg"
+  "src": "photos/dbbench-1.jpg",
+  "frames": [
+   "photos/dbbench-0.jpg",
+   "photos/dbbench-1.jpg"
+  ],
+  "credit": "Dumbbell Bench Press",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "inclinebench": {
-  "src": "photos/inclinebench.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Incline-bench-press-1.png"
+  "src": "photos/inclinebench-1.jpg",
+  "frames": [
+   "photos/inclinebench-0.jpg",
+   "photos/inclinebench-1.jpg"
+  ],
+  "credit": "Barbell Incline Bench Press - Medium Grip",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "inclinedb": {
-  "src": "photos/inclinedb.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Dumbbell-incline-bench-press-1.png"
+  "src": "photos/inclinedb-1.jpg",
+  "frames": [
+   "photos/inclinedb-0.jpg",
+   "photos/inclinedb-1.jpg"
+  ],
+  "credit": "Incline Dumbbell Press",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "declinepushup": {
+  "src": "photos/declinepushup-1.jpg",
+  "frames": [
+   "photos/declinepushup-0.jpg",
+   "photos/declinepushup-1.jpg"
+  ],
+  "credit": "Decline Push-Up",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "dbfly": {
-  "src": "photos/dbfly.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Dumbbell-flys-1.png"
+  "src": "photos/dbfly-1.jpg",
+  "frames": [
+   "photos/dbfly-0.jpg",
+   "photos/dbfly-1.jpg"
+  ],
+  "credit": "Dumbbell Flyes",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "cablefly": {
-  "src": "photos/cablefly.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Cable-crossover-1.png"
+  "src": "photos/cablefly-1.jpg",
+  "frames": [
+   "photos/cablefly-0.jpg",
+   "photos/cablefly-1.jpg"
+  ],
+  "credit": "Cable Crossover",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "dbohp": {
-  "src": "photos/dbohp.jpg",
-  "credit": "Tyler Read",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_dumbbell_shoulder_press_02.jpg"
+  "src": "photos/dbohp-1.jpg",
+  "frames": [
+   "photos/dbohp-0.jpg",
+   "photos/dbohp-1.jpg"
+  ],
+  "credit": "Dumbbell Shoulder Press",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "lateralraise": {
-  "src": "photos/lateralraise.jpg",
-  "credit": "No machine-readable author provided. GeorgeStepanek assumed (based on copyright ",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:DumbbellLateralRaise.JPG"
+  "src": "photos/lateralraise-1.jpg",
+  "frames": [
+   "photos/lateralraise-0.jpg",
+   "photos/lateralraise-1.jpg"
+  ],
+  "credit": "Side Lateral Raise",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "cablelateral": {
+  "src": "photos/cablelateral-1.jpg",
+  "frames": [
+   "photos/cablelateral-0.jpg",
+   "photos/cablelateral-1.jpg"
+  ],
+  "credit": "Cable Seated Lateral Raise",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "pushdown": {
-  "src": "photos/pushdown.jpg",
-  "credit": "No machine-readable author provided. GeorgeStepanek assumed (based on copyright ",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:CableMachinePushdown.JPG"
+  "src": "photos/pushdown-1.jpg",
+  "frames": [
+   "photos/pushdown-0.jpg",
+   "photos/pushdown-1.jpg"
+  ],
+  "credit": "Triceps Pushdown",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "skullcrusher": {
-  "src": "photos/skullcrusher.jpg",
-  "credit": "No machine-readable author provided. GeorgeStepanek assumed (based on copyright ",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:DumbbellTricepsExtension.JPG"
+  "src": "photos/skullcrusher-1.jpg",
+  "frames": [
+   "photos/skullcrusher-0.jpg",
+   "photos/skullcrusher-1.jpg"
+  ],
+  "credit": "EZ-Bar Skullcrusher",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "ohtriceps": {
+  "src": "photos/ohtriceps-1.jpg",
+  "frames": [
+   "photos/ohtriceps-0.jpg",
+   "photos/ohtriceps-1.jpg"
+  ],
+  "credit": "Cable Rope Overhead Triceps Extension",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "frontsquat": {
-  "src": "photos/frontsquat.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Front-squat-1-857x1024.png"
+  "src": "photos/frontsquat-1.jpg",
+  "frames": [
+   "photos/frontsquat-0.jpg",
+   "photos/frontsquat-1.jpg"
+  ],
+  "credit": "Front Squat (Clean Grip)",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "legpress": {
-  "src": "photos/legpress.jpg",
-  "credit": "Nenad Stojkovic",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Young_man_using_a_leg_press_machine_at_the_gym.jpg"
+  "src": "photos/legpress-1.jpg",
+  "frames": [
+   "photos/legpress-0.jpg",
+   "photos/legpress-1.jpg"
+  ],
+  "credit": "Leg Press",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "hacksquat": {
-  "src": "photos/hacksquat.jpg",
-  "credit": "No machine-readable author provided. GeorgeStepanek assumed (based on copyright ",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:HackSquatMachineExercise.JPG"
+  "src": "photos/hacksquat-1.jpg",
+  "frames": [
+   "photos/hacksquat-0.jpg",
+   "photos/hacksquat-1.jpg"
+  ],
+  "credit": "Hack Squat",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "legext": {
-  "src": "photos/legext.jpg",
-  "credit": "No machine-readable author provided. GeorgeStepanek assumed (based on copyright ",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:LegExtensionMachineExercise.JPG"
+  "src": "photos/legext-1.jpg",
+  "frames": [
+   "photos/legext-0.jpg",
+   "photos/legext-1.jpg"
+  ],
+  "credit": "Leg Extensions",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "rdl": {
-  "src": "photos/rdl.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Romanian-deadlift-1.png"
+  "src": "photos/rdl-0.jpg",
+  "frames": [
+   "photos/rdl-0.jpg",
+   "photos/rdl-1.jpg"
+  ],
+  "credit": "Romanian Deadlift",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "stiffleg": {
+  "src": "photos/stiffleg-0.jpg",
+  "frames": [
+   "photos/stiffleg-0.jpg",
+   "photos/stiffleg-1.jpg"
+  ],
+  "credit": "Stiff-Legged Barbell Deadlift",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "goodmorning": {
-  "src": "photos/goodmorning.jpg",
-  "credit": "self",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:GoodMorningSequence.jpg"
+  "src": "photos/goodmorning-1.jpg",
+  "frames": [
+   "photos/goodmorning-0.jpg",
+   "photos/goodmorning-1.jpg"
+  ],
+  "credit": "Good Morning",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kickback": {
+  "src": "photos/kickback-1.jpg",
+  "frames": [
+   "photos/kickback-0.jpg",
+   "photos/kickback-1.jpg"
+  ],
+  "credit": "Glute Kickback",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "hamcurl": {
-  "src": "photos/hamcurl.jpg",
-  "credit": "No machine-readable author provided. GeorgeStepanek assumed (based on copyright ",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:LyingLegCurlMachineExercise.JPG"
+  "src": "photos/hamcurl-1.jpg",
+  "frames": [
+   "photos/hamcurl-0.jpg",
+   "photos/hamcurl-1.jpg"
+  ],
+  "credit": "Lying Leg Curls",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "nordic": {
+  "src": "photos/nordic-1.jpg",
+  "frames": [
+   "photos/nordic-0.jpg",
+   "photos/nordic-1.jpg"
+  ],
+  "credit": "Natural Glute Ham Raise",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "hipthrust": {
+  "src": "photos/hipthrust-1.jpg",
+  "frames": [
+   "photos/hipthrust-0.jpg",
+   "photos/hipthrust-1.jpg"
+  ],
+  "credit": "Barbell Hip Thrust",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "chinup": {
-  "src": "photos/chinup.jpg",
-  "credit": "https://www.flickr.com/photos/theogeo/",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Chin-ups.jpg"
+  "src": "photos/chinup-1.jpg",
+  "frames": [
+   "photos/chinup-0.jpg",
+   "photos/chinup-1.jpg"
+  ],
+  "credit": "Chin-Up",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "straightarm": {
+  "src": "photos/straightarm-1.jpg",
+  "frames": [
+   "photos/straightarm-0.jpg",
+   "photos/straightarm-1.jpg"
+  ],
+  "credit": "Straight-Arm Pulldown",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "pullover": {
-  "src": "photos/pullover.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Dumbbell-bent-arm-pullover-1.png"
+  "src": "photos/pullover-1.jpg",
+  "frames": [
+   "photos/pullover-0.jpg",
+   "photos/pullover-1.jpg"
+  ],
+  "credit": "Bent-Arm Dumbbell Pullover",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
- "cablerow": {
-  "src": "photos/cablerow.jpg",
-  "credit": "Miguel Angel Omaña Rojas",
-  "license": "CC0",
-  "page": "https://commons.wikimedia.org/wiki/File:Woman_using_a_seated_cable_row_machine_at_the_gym.jpg"
- },
- "bbcurl": {
-  "src": "photos/bbcurl.jpg",
-  "credit": "No machine-readable author provided. Scoobytrash assumed (based on copyright cla",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:StandingBarbellCurl.jpg"
- },
- "hammer": {
-  "src": "photos/hammer.jpg",
-  "credit": "Everkinetic",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Bicep-hammer-curl-1.png"
- },
- "preacher": {
-  "src": "photos/preacher.jpg",
-  "credit": "No machine-readable author provided. GeorgeStepanek assumed (based on copyright ",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:PreacherBenchBicepsCurl.JPG"
+ "dbrow": {
+  "src": "photos/dbrow-1.jpg",
+  "frames": [
+   "photos/dbrow-0.jpg",
+   "photos/dbrow-1.jpg"
+  ],
+  "credit": "One-Arm Dumbbell Row",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  },
  "meadows": {
-  "src": "photos/meadows.jpg",
-  "credit": "Eric Astrauskas, www.PTinTO.com",
-  "license": "CC BY 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Landmine_Bent-Over_Rows.jpg"
+  "src": "photos/meadows-1.jpg",
+  "frames": [
+   "photos/meadows-0.jpg",
+   "photos/meadows-1.jpg"
+  ],
+  "credit": "T-Bar Row with Handle",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "cablerow": {
+  "src": "photos/cablerow-1.jpg",
+  "frames": [
+   "photos/cablerow-0.jpg",
+   "photos/cablerow-1.jpg"
+  ],
+  "credit": "Seated Cable Rows",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "bbcurl": {
+  "src": "photos/bbcurl-1.jpg",
+  "frames": [
+   "photos/bbcurl-0.jpg",
+   "photos/bbcurl-1.jpg"
+  ],
+  "credit": "Barbell Curl",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "hammer": {
+  "src": "photos/hammer-1.jpg",
+  "frames": [
+   "photos/hammer-0.jpg",
+   "photos/hammer-1.jpg"
+  ],
+  "credit": "Hammer Curls",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "concentration": {
+  "src": "photos/concentration-1.jpg",
+  "frames": [
+   "photos/concentration-0.jpg",
+   "photos/concentration-1.jpg"
+  ],
+  "credit": "Concentration Curls",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "preacher": {
+  "src": "photos/preacher-1.jpg",
+  "frames": [
+   "photos/preacher-0.jpg",
+   "photos/preacher-1.jpg"
+  ],
+  "credit": "Preacher Curl",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "reardelt": {
+  "src": "photos/reardelt-1.jpg",
+  "frames": [
+   "photos/reardelt-0.jpg",
+   "photos/reardelt-1.jpg"
+  ],
+  "credit": "Seated Bent-Over Rear Delt Raise",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "pecdeck": {
+  "src": "photos/pecdeck-1.jpg",
+  "frames": [
+   "photos/pecdeck-0.jpg",
+   "photos/pecdeck-1.jpg"
+  ],
+  "credit": "Reverse Machine Flyes",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "facepull": {
+  "src": "photos/facepull-1.jpg",
+  "frames": [
+   "photos/facepull-0.jpg",
+   "photos/facepull-1.jpg"
+  ],
+  "credit": "Face Pull",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "walk": {
+  "src": "photos/walk-1.jpg",
+  "frames": [
+   "photos/walk-0.jpg",
+   "photos/walk-1.jpg"
+  ],
+  "credit": "Trail Running/Walking",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "inclinewalk": {
+  "src": "photos/inclinewalk-1.jpg",
+  "frames": [
+   "photos/inclinewalk-0.jpg",
+   "photos/inclinewalk-1.jpg"
+  ],
+  "credit": "Walking, Treadmill",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "cycling": {
+  "src": "photos/cycling-1.jpg",
+  "frames": [
+   "photos/cycling-0.jpg",
+   "photos/cycling-1.jpg"
+  ],
+  "credit": "Bicycling, Stationary",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "elliptical": {
+  "src": "photos/elliptical-1.jpg",
+  "frames": [
+   "photos/elliptical-0.jpg",
+   "photos/elliptical-1.jpg"
+  ],
+  "credit": "Elliptical Trainer",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  }
 };

@@ -1,8 +1,12 @@
 [build]
   publish = "public"
+  # Skip deploys when a commit only changes Markdown files (CLAUDE.md, README.md) or tests.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude)*.md' ':(exclude)tests/'"
 
 [functions]
   directory = "netlify/functions"
+  # Ship Google's Gemini library as-is instead of bundling it (it loads parts of Node at runtime).
+  external_node_modules = ["@google/genai"]
 
 [[headers]]
   for = "/sw.js"

@@ -1,21 +1,22 @@
 // Reads a workout video/post link (YouTube, Instagram, TikTok, Reddit, or any page),
 // gathers its title, caption/description and (for YouTube) spoken transcript,
-// and asks Claude to turn it into a workout routine the app can save.
+// and asks Google Gemini to turn it into a workout routine the app can save.
+// For YouTube links Gemini also watches the video itself.
 //
-// Runs on Netlify. Claude is reached through Netlify AI Gateway, which supplies the
-// credentials automatically (no API key to manage). Served at /api/import-workout.
-import Anthropic from "@anthropic-ai/sdk";
+// Uses the owner's own Gemini API key (Netlify environment variable GOOGLE_API_KEY,
+// or GEMINI_API_KEY), so it's billed to their Google account and never uses Netlify
+// AI Gateway credits. Served at /api/import-workout.
+import { MediaResolution } from "@google/genai";
+import { errorReply, generate, geminiKey, json, NO_KEY } from "./_lib/gemini.mts";
 import type { Config } from "@netlify/functions";
 
-const MODELS = ["claude-opus-5-5", "claude-sonnet-5-5"]; // second one only if the first isn't offered
-const MAX_SOURCE = 30000; // characters of video text sent to Claude
+const MAX_SOURCE = 30000; // characters of video text sent to the AI
 const UA = "Mozilla/5.0 (compatible; household-workout-app/1.0)";
 const GROUPS = ["Legs", "Chest", "Back", "Shoulders", "Arms", "Core", "Cardio", "Full body"];
 
 type LibEx = { id: string; name: string; group?: string; kind?: string };
 type Source = { kind: string; title: string; author: string; parts: string[]; gotTranscript: boolean };
 
-const json = (data: unknown, status = 200) => Response.json(data, { status });
 
 export default async (req: Request) => {
   let body: any;
@@ -26,18 +27,17 @@ export default async (req: Request) => {
   if (!url && !pasted) return json({ error: "bad_request", message: "Paste a link or some text." }, 400);
   if (url && !/^https?:\/\//i.test(url)) return json({ error: "bad_request", message: "That doesn't look like a link." }, 400);
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return json({ error: "no_ai", message: "The AI service isn't switched on for this site yet. In Netlify, AI features need to be enabled and the site deployed once." }, 503);
-  }
+  if (!geminiKey()) return NO_KEY("Video reading");
 
   // 1. Read what we can from the link.
   let src: Source = { kind: "link", title: "", author: "", parts: [], gotTranscript: false };
   if (url) {
     try { src = await readSource(url); } catch (e) { console.warn("read failed", url, e); }
   }
+  const yt = url ? ytId(url) : null;
   const sourceText = [src.title && `Title: ${src.title}`, src.author && `Posted by: ${src.author}`, ...src.parts]
     .filter(Boolean).join("\n\n").slice(0, MAX_SOURCE);
-  if (sourceText.replace(/\s+/g, "").length < 40 && !pasted) {
+  if (!yt && sourceText.replace(/\s+/g, "").length < 40 && !pasted) {
     return json({
       error: "couldnt_read",
       message: "Couldn't read anything from that link (some sites, like Instagram, often block this). Paste the video's caption or the list of exercises and try again.",
@@ -45,13 +45,13 @@ export default async (req: Request) => {
     }, 422);
   }
 
-  // 2. Ask Claude to turn it into a routine.
+  // 2. Ask Gemini to turn it into a routine.
   const libList = library.map((e) => `${e.id} | ${e.name} | ${e.group || ""} | ${e.kind || ""}`).join("\n");
-  const prompt = `Someone saved a workout video or post and wants to do this workout. Turn it into a routine for their workout-tracking app.
-
-Here is everything we could read from it (title, caption/description, transcript, comments). Transcripts are auto-generated and can contain mistakes.
+  const prompt = (withVideo: boolean) => `Someone saved a workout video or post and wants to do this workout. Turn it into a routine for their workout-tracking app.
+${withVideo ? "\nThe video itself is attached: watch it, including exercises that are only shown on screen and never said.\n" : ""}
+Here is the text we could read from it (title, caption/description, transcript, comments). Transcripts are auto-generated and can contain mistakes.
 <source url="${escapeAttr(url)}">
-${sourceText || "(nothing could be read from the link)"}
+${sourceText || "(no text could be read from the link)"}
 </source>
 ${pasted ? `\nThe person also pasted this text about it:\n<pasted>\n${pasted}\n</pasted>\n` : ""}
 Their app has this exercise library (id | name | muscle group | how it's tracked):
@@ -97,45 +97,40 @@ Instructions:
     },
   };
 
-  const client = new Anthropic();
-  let msg: Anthropic.Message | null = null;
-  let lastErr: unknown = null;
-  for (const model of MODELS) {
-    try {
-      msg = await client.messages.create({
-        model,
-        max_tokens: 16000,
-        output_config: { effort: "low", format: { type: "json_schema", schema } },
-        messages: [{ role: "user", content: prompt }],
-      } as any);
-      break;
-    } catch (e) {
-      lastErr = e;
-      // Try the next model only when this one isn't available; anything else is a real error.
-      if (e instanceof Anthropic.NotFoundError || (e instanceof Anthropic.BadRequestError && /model/i.test(e.message))) continue;
-      break;
-    }
-  }
-  if (!msg) {
-    console.error("Claude call failed", lastErr);
-    if (lastErr instanceof Anthropic.RateLimitError) return json({ error: "busy", message: "The AI is busy right now. Try again in a minute." }, 429);
-    if (lastErr instanceof Anthropic.AuthenticationError || lastErr instanceof Anthropic.PermissionDeniedError)
-      return json({ error: "no_ai", message: "The AI service isn't available for this site (Netlify AI features may be off, or this month's credits are used up)." }, 503);
-    return json({ error: "ai_failed", message: "The AI couldn't read this one. Try again, or paste the caption." }, 502);
-  }
-  if (msg.stop_reason === "refusal") return json({ error: "refused", message: "The AI wouldn't process this link. Try pasting the exercise list instead." }, 422);
-  if (msg.stop_reason === "max_tokens") return json({ error: "ai_failed", message: "That workout was too long to read in one go. Paste just the exercise list." }, 422);
+  const ask = (withVideo: boolean, timeout: number) => {
+    const parts: any[] = [];
+    if (withVideo) parts.push({ fileData: { fileUri: `https://www.youtube.com/watch?v=${yt}` } });
+    parts.push({ text: prompt(withVideo) });
+    return generate([{ role: "user", parts }], {
+      responseMimeType: "application/json",
+      responseJsonSchema: schema,
+      ...(withVideo ? { mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW } : {}),
+      httpOptions: { timeout },
+    });
+  };
 
-  const text = msg.content.map((b: any) => (b.type === "text" ? b.text : "")).join("");
+  let res: { r: any; model: string } | null = null;
+  let usedVideo = false, lastErr: unknown = null;
+  if (yt) {
+    try { res = await ask(true, 38000); usedVideo = true; } catch (e) { lastErr = e; console.warn("video read failed, using text only", e); }
+  }
+  if (!res && (sourceText.length > 40 || pasted)) {
+    try { res = await ask(false, 15000); } catch (e) { lastErr = e; }
+  }
+  if (!res) return errorReply(lastErr, "The AI couldn't read this one. Try again, or paste the caption.");
+  const reason = res.r.candidates?.[0]?.finishReason;
+  if (reason === "SAFETY" || res.r.promptFeedback?.blockReason) return json({ error: "refused", message: "The AI wouldn't process this link. Try pasting the exercise list instead." }, 422);
+  if (reason === "MAX_TOKENS") return json({ error: "ai_failed", message: "That workout was too long to read in one go. Paste just the exercise list." }, 422);
+
   let routine: any;
-  try { routine = JSON.parse(text); } catch { return json({ error: "ai_failed", message: "The AI's answer came back garbled. Try again." }, 502); }
+  try { routine = JSON.parse(res.r.text || ""); } catch { return json({ error: "ai_failed", message: "The AI's answer came back garbled. Try again." }, 502); }
 
   const ids = new Set(library.map((e) => e.id));
   routine.exercises = (routine.exercises || []).map((x: any) => ({ ...x, libraryId: ids.has(x.libraryId) ? x.libraryId : "" }));
   return json({
     routine,
-    source: { kind: src.kind, title: src.title, author: src.author, gotTranscript: src.gotTranscript, readSomething: sourceText.length > 40 },
-    model: msg.model,
+    source: { kind: src.kind, title: src.title, author: src.author, gotTranscript: src.gotTranscript, watchedVideo: usedVideo, readSomething: sourceText.length > 40 },
+    model: res.model,
   });
 };
 

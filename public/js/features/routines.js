@@ -4,6 +4,7 @@ import { deleteDoc, newId, saveDoc } from "../core/store.js";
 import { action, closeSheet, collection, hook, openSheet, render, sheets, slot, slots, topSheet } from "../core/ui.js";
 import { $, esc, isoDay, toast } from "../core/util.js";
 import { openPeople } from "./people.js";
+import { timerLabel } from "./intervals.js";
 import { activeSession, openSession } from "./plans.js";
 
 /* ============================================================
@@ -25,7 +26,7 @@ export function routineCard() {
   return `<div class="dayh">Workouts from videos</div>
     <div style="padding:0 16px">
       ${S.routines.map((r) => `<div class="pl" data-act="rt-open" data-id="${esc(r.id)}"><div class="t">${rtIcon(r)} ${esc(r.name)}</div>
-        <div class="d">${(r.slots || []).length} exercises${r.focus ? " · " + esc(r.focus) : ""}</div></div>`).join("")}
+        <div class="d">${r.timer ? "⏱ Timed · " : ""}${(r.slots || []).length} exercises${r.focus ? " · " + esc(r.focus) : ""}</div></div>`).join("")}
       <button class="btn block" data-act="rt-import">＋ Add a workout from a video</button>
       ${S.routines.length ? "" : `<div class="small" style="margin-top:6px">Saw a workout on YouTube, Instagram, TikTok or Reddit? Paste the link and the app turns it into a workout you can follow and log.</div>`}
     </div>`;
@@ -80,10 +81,11 @@ export async function runImport() {
     openRoutineEditor({
       fromAI: true, name: rt.name || (j.source && j.source.title) || "Video workout", focus: rt.focus || "", notes: rt.notes || "", url,
       sourceTitle: (j.source && j.source.title) || "", sourceKind: (j.source && j.source.kind) || srcKind(url),
+      timer: rt.timer && rt.timer.timed ? { work: rt.timer.work || 30, rest: rt.timer.rest || 0, rounds: rt.timer.rounds || 1, roundRest: rt.timer.roundRest || 0 } : null,
       items: rt.exercises.map((x) => ({
         ex: x.libraryId && exById(x.libraryId) ? x.libraryId : "", newName: x.name || "", name: x.name || "",
         group: GROUPS.includes(x.group) ? x.group : "Full body", kind: x.kind || "reps",
-        sets: x.sets || 3, reps: x.reps || "10", note: x.note || "",
+        sets: x.sets || 3, reps: x.reps || "10", secs: x.seconds || "", note: x.note || "",
       })),
     });
   } catch (e) {
@@ -104,10 +106,10 @@ export function openRoutineEditor(draft) {
 export function routineToDraft(r) {
   return {
     id: r.id, createdAt: r.createdAt, addedBy: r.addedBy, name: r.name, focus: r.focus || "", notes: r.notes || "", url: r.url || "",
-    sourceTitle: r.sourceTitle || "", sourceKind: r.sourceKind || "",
+    sourceTitle: r.sourceTitle || "", sourceKind: r.sourceKind || "", timer: r.timer || null,
     items: (r.slots || []).map((sl) => {
       const o = sl.options[0] || {}, ex = exById(o.ex);
-      return { ex: ex ? o.ex : "", newName: ex ? "" : o.label || "", name: o.label || "", group: sl.body || "Full body", kind: (ex && ex.kind) || "reps", sets: sl.sets, reps: sl.reps, note: sl.note || "" };
+      return { ex: ex ? o.ex : "", newName: ex ? "" : o.label || "", name: o.label || "", group: sl.body || "Full body", kind: (ex && ex.kind) || "reps", sets: sl.sets, reps: sl.reps, secs: sl.secs || "", note: sl.note || "" };
     }),
   };
 }
@@ -127,6 +129,14 @@ export function renderRoutineEditor(el) {
       <div class="f"><label>Focus</label><input data-rt="focus" value="${esc(st.focus)}" placeholder="e.g. Legs and glutes"></div>
       <div class="f"><label>Video link</label><input data-rt="url" inputmode="url" value="${esc(st.url)}" placeholder="Optional"></div>
       <div class="f"><label>How to do it</label><textarea data-rt="notes" style="min-height:60px" placeholder="Rounds, rest times, warm-up… (optional)">${esc(st.notes)}</textarea></div>
+      <div class="f"><span class="lbl">How it's done</span>
+        <div class="seg"><button data-act="rt-mode" data-v="sets" class="${st.timer ? "" : "on"}">Sets & reps</button><button data-act="rt-mode" data-v="timed" class="${st.timer ? "on" : ""}">⏱ Timed intervals</button></div></div>
+      ${st.timer ? `<div class="rx ivset"><div class="row2">
+          <div class="f"><label>Work (sec)</label><input data-rtt="work" inputmode="numeric" value="${esc(st.timer.work)}"></div>
+          <div class="f"><label>Rest (sec)</label><input data-rtt="rest" inputmode="numeric" value="${esc(st.timer.rest)}"></div></div>
+        <div class="row2"><div class="f"><label>Rounds</label><input data-rtt="rounds" inputmode="numeric" value="${esc(st.timer.rounds)}"></div>
+          <div class="f"><label>Rest between rounds (sec)</label><input data-rtt="roundRest" inputmode="numeric" value="${esc(st.timer.roundRest)}"></div></div>
+        <div class="hint">Example: Tabata is 20 sec work, 10 sec rest, 8 rounds.</div></div>` : ""}
       <div class="lbl">Exercises, in order</div>
       ${st.items.map((it, i) => `<div class="rx">
         <div class="rxh"><b>${i + 1}.</b><select data-rf="ex" data-i="${i}"><option value="" ${it.ex ? "" : "selected"}>➕ New exercise${it.newName ? ": " + esc(it.newName) : ""}</option>${opts(it.ex)}</select>
@@ -134,8 +144,9 @@ export function renderRoutineEditor(el) {
         ${it.ex ? "" : `<div class="f" style="margin-top:8px"><label>New exercise name</label><input data-rf="name" data-i="${i}" value="${esc(it.name)}" placeholder="e.g. Bear crawl"></div>
           <div class="row2"><div class="f"><label>Muscle group</label>${sel("group", i, GROUPS.map((g) => [g, g]), it.group)}</div>
           <div class="f"><label>Track it by</label>${sel("kind", i, [["weight", "Weight × reps"], ["reps", "Reps"], ["time", "Time"]], it.kind)}</div></div>`}
-        <div class="row2" style="margin-top:8px"><div class="f"><label>Sets</label><input data-rf="sets" data-i="${i}" inputmode="numeric" value="${esc(it.sets)}"></div>
-          <div class="f"><label>Reps or time</label><input data-rf="reps" data-i="${i}" value="${esc(it.reps)}" placeholder="10, 8-12, 30 sec"></div></div>
+        ${st.timer ? `<div class="f" style="margin-top:8px"><label>Work time for this exercise (sec)</label><input data-rf="secs" data-i="${i}" inputmode="numeric" value="${esc(it.secs || "")}" placeholder="${esc(st.timer.work)} (same as above)"></div>`
+          : `<div class="row2" style="margin-top:8px"><div class="f"><label>Sets</label><input data-rf="sets" data-i="${i}" inputmode="numeric" value="${esc(it.sets)}"></div>
+          <div class="f"><label>Reps or time</label><input data-rf="reps" data-i="${i}" value="${esc(it.reps)}" placeholder="10, 8-12, 30 sec"></div></div>`}
         <div class="f"><label>Note</label><input data-rf="note" data-i="${i}" value="${esc(it.note)}" placeholder="Optional"></div>
       </div>`).join("")}
       <button class="btn block" data-act="rt-add">＋ Add an exercise</button>
@@ -148,6 +159,8 @@ export function saveRoutine() {
   if (!name) { toast("Give the workout a name."); return; }
   const items = st.items.filter((it) => it.ex || (it.name || "").trim());
   if (!items.length) { toast("Add at least one exercise."); return; }
+  const n = (v, d, min = 0) => Math.max(min, Math.round(Number(v) || d));
+  const timer = st.timer ? { work: n(st.timer.work, 30, 5), rest: n(st.timer.rest, 0), rounds: n(st.timer.rounds, 1, 1), roundRest: n(st.timer.roundRest, 0) } : null;
   const routineSlots = items.map((it) => {
     let exId = it.ex, label = "", group = it.group;
     if (exId) { const ex = exById(exId); label = ex.name; group = ex.group; }
@@ -159,11 +172,15 @@ export function saveRoutine() {
         photo: "", video: st.url || "", muscles: "", steps: it.note ? [it.note] : [], tips: [], mistakes: [], alts: [], aliases: [label.toLowerCase()],
       });
     }
+    if (timer) {
+      const secs = Math.round(Number(it.secs) || 0);
+      return { body: group || "", name: "", sets: timer.rounds, reps: (secs || timer.work) + " sec", secs, note: (it.note || "").trim(), options: [{ label, ex: exId }] };
+    }
     return { body: group || "", name: "", sets: Math.max(1, Math.round(Number(it.sets) || 3)), reps: String(it.reps || "").trim() || "10", note: (it.note || "").trim(), options: [{ label, ex: exId }] };
   });
   const id = saveDoc("routines", {
     id: st.id || undefined, name, focus: (st.focus || "").trim(), notes: (st.notes || "").trim(), url: (st.url || "").trim(),
-    sourceTitle: st.sourceTitle || "", sourceKind: st.sourceKind || srcKind(st.url), slots: routineSlots,
+    sourceTitle: st.sourceTitle || "", sourceKind: st.sourceKind || srcKind(st.url), slots: routineSlots, timer,
     createdAt: st.createdAt || Date.now(), addedBy: st.addedBy || myName(),
   });
   while (sheets.length) closeSheet();
@@ -182,12 +199,15 @@ export function openRoutine(id) {
       ${vid ? `<div class="vid"><iframe src="https://www.youtube-nocookie.com/embed/${vid}" allowfullscreen title="Video"></iframe></div>` : r.url ? `<a class="btn block" style="margin-bottom:10px" href="${esc(r.url)}" target="_blank" rel="noopener">${rtIcon(r)} Open the video</a>` : ""}
       <h2>${esc(r.name)}</h2>
       <div class="small">${esc([r.focus, r.addedBy ? "added by " + r.addedBy : "", r.sourceTitle && r.sourceTitle !== r.name ? "from “" + r.sourceTitle + "”" : ""].filter(Boolean).join(" · "))}</div>
+      ${r.timer ? `<div class="rest" style="margin-top:10px">⏱ ${esc(timerLabel(r))}</div>` : ""}
       ${r.notes ? `<div class="note" style="margin-top:10px">${esc(r.notes)}</div>` : ""}
       <div class="sec"><ol class="slots">${(r.slots || []).map((sl) => {
         const o = sl.options[0] || {};
         return `<li><div class="nm"><a href="#" data-act="ex" data-id="${esc(o.ex)}">${esc(o.label)}</a><div class="sub">${esc(sl.body)}${sl.note ? " · " + esc(sl.note) : ""}</div></div><div class="sr">${sl.sets} × ${esc(sl.reps)}</div></li>`;
       }).join("")}</ol></div>
-      <div class="sec"><button class="btn pri block" data-act="rt-start" data-id="${esc(r.id)}">Start this workout</button></div>
+      <div class="sec">${r.timer ? `<button class="btn pri block" data-act="iv-start" data-id="${esc(r.id)}">▶ Start the timer</button>
+        <button class="btn block" style="margin-top:8px" data-act="rt-start" data-id="${esc(r.id)}">Start as a checklist instead</button>`
+        : `<button class="btn pri block" data-act="rt-start" data-id="${esc(r.id)}">Start this workout</button>`}</div>
     </div>`;
   openSheet(html);
 }
@@ -225,10 +245,11 @@ export function handleShare() {
 // Routine editor fields: keep the draft in sync as you type.
 export function syncRoutineField(e) {
   const t = e.target;
-  if (!t.dataset || !(t.dataset.rt || t.dataset.rf)) return;
+  if (!t.dataset || !(t.dataset.rt || t.dataset.rf || t.dataset.rtt)) return;
   const sh = t.closest(".sheet"), st = sh && sh._rt;
   if (!st) return;
   if (t.dataset.rt) { st[t.dataset.rt] = t.value; return; }
+  if (t.dataset.rtt) { st.timer[t.dataset.rtt] = t.value; return; }
   const it = st.items[+t.dataset.i];
   it[t.dataset.rf] = t.value;
   if (t.dataset.rf === "ex" && e.type === "change") {
@@ -253,6 +274,11 @@ action("rt-edit", (a, e, id) => { const r = S.routines.find((x) => x.id === id);
 action("rt-save", (a, e, id) => { saveRoutine(); });
 action("rt-del", (a, e, id) => {
   if (confirm("Delete this workout? Anything you've logged from it stays in your history.")) { deleteDoc("routines", id); while (sheets.length) closeSheet(); toast("Deleted"); }
+});
+action("rt-mode", (a) => {
+  const el = topSheet().el, st = el._rt;
+  st.timer = a.dataset.v === "timed" ? st.timer || { work: 30, rest: 30, rounds: 3, roundRest: 60 } : null;
+  renderRoutineEditor(el);
 });
 action("rt-add", (a, e, id) => { const el = topSheet().el; el._rt.items.push(blankItem()); renderRoutineEditor(el); });
 action("rt-rm", (a, e, id) => { const el = topSheet().el; el._rt.items.splice(+a.dataset.i, 1); renderRoutineEditor(el); });

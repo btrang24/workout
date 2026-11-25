@@ -10,7 +10,7 @@ console.warn = () => {}; console.error = () => {};
 globalThis.fetch = async (u, o = {}) => {
   u = String(u?.url || u);
   if (u.startsWith("https://www.youtube.com/watch")) return new Response(`<script>var ytInitialPlayerResponse = ${JSON.stringify(pr)};var meta = 1;</script>`);
-  if (u.includes("instagram.com")) return new Response("blocked", { status: 429 });
+  if (u.includes("instagram.com") || u.includes("reddit.com")) return new Response("blocked", { status: 403 });
   if (u.includes(":generateContent")) {
     const body = JSON.parse(o.body); const h = new Headers(o.headers);
     const model = u.match(/models\/([^:]+):/)[1];
@@ -19,6 +19,12 @@ globalThis.fetch = async (u, o = {}) => {
     if (mode.badKey) return Response.json({ error: { code: 400, message: "API key not valid", status: "INVALID_ARGUMENT" } }, { status: 400 });
     if (mode.no404 === model) return Response.json({ error: { code: 404, message: "model not found", status: "NOT_FOUND" } }, { status: 404 });
     if (mode.videoFail && video) return Response.json({ error: { code: 500, message: "boom", status: "INTERNAL" } }, { status: 500 });
+    if (body.tools && JSON.stringify(body.tools).includes("url")) {
+      reqs.at(-1).web = true;
+      const status = mode.webFail ? "URL_RETRIEVAL_STATUS_ERROR" : "URL_RETRIEVAL_STATUS_SUCCESS";
+      const text = "Here you go:\n```json\n" + JSON.stringify(mode.tabata || out) + "\n```";
+      return Response.json({ candidates: [{ content: { role: "model", parts: [{ text }] }, finishReason: "STOP", urlContextMetadata: { urlMetadata: [{ retrievedUrl: "x", urlRetrievalStatus: status }] } }] });
+    }
     return Response.json({ candidates: [{ content: { role: "model", parts: [{ text: JSON.stringify(out) }] }, finishReason: "STOP" }] });
   }
   return realFetch(u, o);
@@ -46,7 +52,15 @@ ok(s === 200 && j.model === "gemini-2.5-flash", "unknown model name -> fallback 
 process.env.GEMINI_MODEL = "gemini-custom"; mode = {}; [s, j] = await call({ text: "pushups 3x15" }); ok(j.model === "gemini-custom", "GEMINI_MODEL setting respected"); delete process.env.GEMINI_MODEL;
 
 mode = { badKey: true }; [s, j] = await call({ text: "pushups" }); ok(s === 503 && j.error === "no_ai", "bad key -> clear message: " + j.message);
-mode = {}; [s, j] = await call({ url: "https://www.instagram.com/reel/x/" }); ok(s === 422 && j.error === "couldnt_read", "Instagram blocked -> paste-caption message");
+mode = {}; reqs.length = 0; [s, j] = await call({ url: "https://www.instagram.com/reel/x/", library: lib });
+ok(s === 200 && j.source.readByGemini && reqs.some((r) => r.web), "page blocked -> Gemini reads the page itself (URL context tool)");
+ok(!JSON.stringify(reqs.find((r) => r.web).cfg || {}).includes("responseJsonSchema"), "no JSON schema sent together with the tool (not allowed by Gemini)");
+mode = { webFail: true }; [s, j] = await call({ url: "https://www.instagram.com/reel/x/" }); ok(s === 422 && j.error === "couldnt_read", "Gemini couldn't open it either -> paste-caption message");
+const TABATA = { found: true, name: "KB Tabata", focus: "Full body", notes: "8 rounds.", timer: { timed: true, work: 20, rest: 10, rounds: 8, roundRest: 60 },
+  exercises: [{ name: "KB swing", libraryId: "", group: "Full body", kind: "reps", sets: 8, reps: "20 sec", seconds: 0, note: "" }, { name: "Goblet squat", libraryId: "", group: "Legs", kind: "reps", sets: 8, reps: "20 sec", seconds: 0, note: "" }] };
+mode = { tabata: TABATA }; [s, j] = await call({ url: "https://www.reddit.com/r/kettlebell_workouts/comments/1y1xq3w/your_next_kb_tabata/" });
+ok(s === 200 && j.routine.timer.timed && j.routine.timer.work === 20 && j.routine.timer.rounds === 8, "Reddit (blocked) -> timed workout with work/rest/rounds");
+mode = {};
 [s, j] = await call({ url: "https://www.instagram.com/reel/x/", text: "squats 3x10" }); ok(s === 200, "Instagram + pasted caption works");
 delete process.env.GOOGLE_API_KEY; process.env.GEMINI_API_KEY = "k2"; [s, j] = await call({ text: "x y z" }); ok(s === 200 && reqs.at(-1).key === "k2", "GEMINI_API_KEY also accepted");
 delete process.env.GEMINI_API_KEY; [s, j] = await call({ text: "x" }); ok(s === 503 && /GOOGLE_API_KEY/.test(j.message), "no key -> setup message");

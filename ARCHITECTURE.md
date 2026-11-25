@@ -8,6 +8,7 @@ How the app is organised, and the plan for the next round of features. Written b
 - **Phase 1 done:** `overload.js` (suggestions), tick-to-repeat sets in `log.js`, `timer.js`, `records.js`, `wakelock.js`, `workoutmode.js`. Settings live on the "You & settings" sheet via `slot("settings")`; the session screen has `slot("session-top")`.
 - **Phase 2 done:** `muscles.js` (weekly sets per muscle + body map; Progress and Today), `bodyweight.js` (collection `bodyweight`), `theme.js` (dark mode via colour variables in `app.css`). The Progress tab is now built from `slot("progress")` sections.
 - **Phase 3 done:** `coach.js` + `netlify/functions/coach.mts` (Gemini, owner's key, sends a compact training summary), `importer.js` (Strong/Hevy/FitNotes CSV, matching, preview, undo; `saveMany` in `core/store.js` for batches). Shared Gemini access lives in `netlify/functions/_lib/gemini.mts`.
+- **Timed workouts:** routines can carry `timer: { work, rest, rounds, roundRest }` (slots may have their own `secs`). `intervals.js` plays them (pure `timeline()` + player). The video reader returns `timer` and, when it can't open a page itself (Reddit often blocks servers), lets Gemini read it with the URL context tool.
 
 ## Where we were (before phase 0)
 

@@ -37,13 +37,8 @@ export default async (req: Request) => {
   const yt = url ? ytId(url) : null;
   const sourceText = [src.title && `Title: ${src.title}`, src.author && `Posted by: ${src.author}`, ...src.parts]
     .filter(Boolean).join("\n\n").slice(0, MAX_SOURCE);
-  if (!yt && sourceText.replace(/\s+/g, "").length < 40 && !pasted) {
-    return json({
-      error: "couldnt_read",
-      message: "Couldn't read anything from that link (some sites, like Instagram, often block this). Paste the video's caption or the list of exercises and try again.",
-      source: { kind: src.kind, title: src.title },
-    }, 422);
-  }
+  // Couldn't read the page ourselves (Reddit often blocks servers): let Gemini read it.
+  const readByGemini = !yt && !!url && sourceText.replace(/\s+/g, "").length < 40 && !pasted;
 
   // 2. Ask Gemini to turn it into a routine.
   const libList = library.map((e) => `${e.id} | ${e.name} | ${e.group || ""} | ${e.kind || ""}`).join("\n");
@@ -66,14 +61,22 @@ Instructions:
 - reps is short text: "10", "8-12", "30 sec", "1 min", "max", "10 each side".
 - notes: one or two short sentences on how to run the workout (rounds, rest times, circuits, warm-up), or "".
 - name: a short title for the routine (not the creator's clickbait title). focus: muscles/goal in a few words.
+- Timed workouts (Tabata, EMOM, intervals, circuits like "30 sec on / 30 sec off"): set timer.timed to true and fill timer.work (seconds of work per exercise), timer.rest (seconds of rest after each exercise, 0 if none), timer.rounds (how many times through the list) and timer.roundRest (extra rest between rounds, 0 if none). For each exercise set seconds to its own work time if it differs from timer.work, else 0. Tabata means 20 sec work / 10 sec rest, 8 rounds, unless the post says otherwise. For timed workouts set sets to the number of rounds and reps to the work time, e.g. "30 sec".
+- Not a timed workout: set timer.timed to false and the other timer numbers to 0, and seconds to 0.
 - If the source isn't actually a workout or you can't tell what the exercises are, set found to false and leave exercises empty. Don't invent a workout that isn't there.`;
 
   const schema = {
     type: "object",
     additionalProperties: false,
-    required: ["found", "name", "focus", "notes", "exercises"],
+    required: ["found", "name", "focus", "notes", "timer", "exercises"],
     properties: {
       found: { type: "boolean" },
+      timer: {
+        type: "object",
+        additionalProperties: false,
+        required: ["timed", "work", "rest", "rounds", "roundRest"],
+        properties: { timed: { type: "boolean" }, work: { type: "integer" }, rest: { type: "integer" }, rounds: { type: "integer" }, roundRest: { type: "integer" } },
+      },
       name: { type: "string" },
       focus: { type: "string" },
       notes: { type: "string" },
@@ -82,7 +85,7 @@ Instructions:
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["name", "libraryId", "group", "kind", "sets", "reps", "note"],
+          required: ["name", "libraryId", "group", "kind", "sets", "reps", "seconds", "note"],
           properties: {
             name: { type: "string" },
             libraryId: { type: "string" },
@@ -90,6 +93,7 @@ Instructions:
             kind: { type: "string", enum: ["weight", "reps", "time"] },
             sets: { type: "integer" },
             reps: { type: "string" },
+            seconds: { type: "integer" },
             note: { type: "string" },
           },
         },
@@ -109,12 +113,25 @@ Instructions:
     });
   };
 
+  // Gemini reads the page itself (URL context tool). Tools can't be combined with a JSON
+  // schema, so the shape is described in the prompt and the JSON is pulled out of the reply.
+  const askWeb = () => generate([{ role: "user", parts: [{ text: prompt(false).replace("(no text could be read from the link)", `(we couldn't open the page: read it yourself at ${url}, including the post text and any workout the poster wrote in the comments)`)
+    + `\n\nReply with only a JSON object (no other text) that matches this JSON schema:\n${JSON.stringify(schema)}` }] }],
+    { tools: [{ urlContext: {} }], httpOptions: { timeout: 40000 } });
+
   let res: { r: any; model: string } | null = null;
   let usedVideo = false, lastErr: unknown = null;
+  if (readByGemini) {
+    try { res = await askWeb(); } catch (e) { lastErr = e; }
+    const status = res?.r.candidates?.[0]?.urlContextMetadata?.urlMetadata?.[0]?.urlRetrievalStatus;
+    if (res && status && !/SUCCESS/.test(status)) {
+      return json({ error: "couldnt_read", message: "Couldn't read anything from that link (the site blocked it). Paste the post's text or the list of exercises and try again.", source: { kind: src.kind, title: src.title } }, 422);
+    }
+  }
   if (yt) {
     try { res = await ask(true, 38000); usedVideo = true; } catch (e) { lastErr = e; console.warn("video read failed, using text only", e); }
   }
-  if (!res && (sourceText.length > 40 || pasted)) {
+  if (!res && !readByGemini && (sourceText.length > 40 || pasted)) {
     try { res = await ask(false, 15000); } catch (e) { lastErr = e; }
   }
   if (!res) return errorReply(lastErr, "The AI couldn't read this one. Try again, or paste the caption.");
@@ -123,13 +140,17 @@ Instructions:
   if (reason === "MAX_TOKENS") return json({ error: "ai_failed", message: "That workout was too long to read in one go. Paste just the exercise list." }, 422);
 
   let routine: any;
-  try { routine = JSON.parse(res.r.text || ""); } catch { return json({ error: "ai_failed", message: "The AI's answer came back garbled. Try again." }, 502); }
+  try { routine = parseJson(res.r.text || ""); } catch { return json({ error: "ai_failed", message: "The AI's answer came back garbled. Try again." }, 502); }
+  if (readByGemini && !routine.found) {
+    return json({ error: "couldnt_read", message: "Couldn't find a workout on that page. Paste the post's text or the list of exercises and try again.", source: { kind: src.kind, title: src.title } }, 422);
+  }
+  routine.timer = routine.timer && routine.timer.timed ? routine.timer : { timed: false, work: 0, rest: 0, rounds: 0, roundRest: 0 };
 
   const ids = new Set(library.map((e) => e.id));
   routine.exercises = (routine.exercises || []).map((x: any) => ({ ...x, libraryId: ids.has(x.libraryId) ? x.libraryId : "" }));
   return json({
     routine,
-    source: { kind: src.kind, title: src.title, author: src.author, gotTranscript: src.gotTranscript, watchedVideo: usedVideo, readSomething: sourceText.length > 40 },
+    source: { kind: src.kind, title: src.title, author: src.author, gotTranscript: src.gotTranscript, watchedVideo: usedVideo, readByGemini, readSomething: sourceText.length > 40 || readByGemini },
     model: res.model,
   });
 };
@@ -144,12 +165,19 @@ export const config: Config = {
 /* ---------------- reading the link ---------------- */
 
 function escapeAttr(s: string) { return s.replace(/[<>"]/g, ""); }
+/** JSON from a model reply that may wrap it in ```json fences or add a sentence around it. */
+function parseJson(t: string) {
+  try { return JSON.parse(t); } catch {}
+  const m = t.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error("no JSON");
+  return JSON.parse(m[0]);
+}
 
-async function get(url: string, accept = "text/html,application/json;q=0.9,*/*;q=0.8") {
+async function get(url: string, accept = "text/html,application/json;q=0.9,*/*;q=0.8", timeout = 12000) {
   const r = await fetch(url, {
     headers: { "user-agent": UA, accept, "accept-language": "en-US,en;q=0.9" },
     redirect: "follow",
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(timeout),
   });
   if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
   return r;
@@ -220,10 +248,10 @@ async function readReddit(url: string): Promise<Source> {
   // Short share links (/r/x/s/abc or redd.it) redirect to the real post first.
   let path = u.pathname;
   if (/\/s\/|^redd\.it$/.test(u.hostname + path)) {
-    const r = await get(url);
+    const r = await get(url, undefined, 6000);
     path = new URL(r.url).pathname;
   }
-  const data = await (await get(`https://www.reddit.com${path.replace(/\/$/, "")}.json?limit=40&sort=top`, "application/json")).json();
+  const data = await (await get(`https://www.reddit.com${path.replace(/\/$/, "")}.json?limit=40&sort=top`, "application/json", 6000)).json();
   const post = data?.[0]?.data?.children?.[0]?.data || {};
   src.title = post.title || "";
   src.author = post.author ? "u/" + post.author : "";

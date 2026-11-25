@@ -15,6 +15,7 @@ import "./features/dictation.js";
 import "./features/people.js";
 import "./features/plans.js";
 import "./features/routines.js";
+import "./features/intervals.js";
 // In the gym (phase 1)
 import "./features/timer.js";
 import "./features/wakelock.js";

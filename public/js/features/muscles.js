@@ -13,7 +13,7 @@ const WORDS = [
   [/upper chest|chest/, ["chest"]], [/rear shoulder|rotator/, ["reardelt"]], [/shoulder/, ["shoulders"]],
   [/upper back/, ["upperback"]], [/lower back/, ["lowback"]], [/lats/, ["lats"]], [/^back$/, ["upperback", "lats"]],
   [/biceps|brachialis/, ["biceps"]], [/triceps/, ["triceps"]], [/^arms$/, ["biceps", "triceps"]], [/forearm|grip/, ["forearms"]],
-  [/abs|core/, ["abs"]], [/glute/, ["glutes"]], [/quad/, ["quads"]], [/hamstring/, ["hams"]], [/calves|calf/, ["calves"]],
+  [/abs|core|oblique/, ["abs"]], [/glute/, ["glutes"]], [/quad/, ["quads"]], [/hamstring/, ["hams"]], [/calves|calf/, ["calves"]],
   [/^legs$/, ["quads", "hams", "glutes"]],
 ];
 const BY_GROUP = { Legs: ["quads", "glutes", "hams"], Chest: ["chest", "triceps"], Back: ["lats", "upperback", "biceps"], Shoulders: ["shoulders"], Arms: ["biceps", "triceps"], Core: ["abs"] };

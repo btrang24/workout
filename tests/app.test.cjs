@@ -35,6 +35,22 @@ const ROUTINE = {
   await p.evaluate(() => scrollTo(0, 0));
   await shot('01-library');
 
+  // ---------- Kettlebell set ----------
+  const kb = await p.evaluate(async () => {
+    const { matchExercise } = await import('/js/features/importer.js');
+    const ex = window.WORKOUT_LIB.EX.filter((e) => e.equip === 'Kettlebell');
+    return { n: ex.length, noEquipAlt: ex.every((e) => e.alts.some((a) => /^(none|bodyweight)$/i.test(a.equip))), steps: ex.every((e) => e.steps.length >= 3 && e.tips.length && e.mistakes.length),
+      long: ex.flatMap((e) => e.steps).filter((s) => s.split(/(?<=[.!?])\s+/).some((x) => x.split(/\s+/).length > 20)),
+      match: ['Kettlebell Swings', 'Goblet Squat', 'Turkish Get-Up', 'Russian Twist', "Farmer's Walk"].map((x) => matchExercise(x)) };
+  });
+  ok(kb.n === 16, 'kettlebell set: 16 exercises');
+  ok(kb.noEquipAlt && kb.steps, 'each has steps, tips, mistakes and a no-equipment alternative');
+  ok(kb.long.length === 0, 'kettlebell steps keep STE sentences to 20 words or fewer ' + JSON.stringify(kb.long));
+  ok(kb.match.join() === 'kbswing,kbgoblet,kbtgu,kbtwist,kbcarry', 'imports and videos match kettlebell names: ' + kb.match.join());
+  await p.fill('#q', 'kettlebell'); await p.waitForTimeout(200);
+  ok(await p.locator('.tile img').count() >= 10, 'kettlebell tiles show photos');
+  await p.fill('#q', ''); await p.click('[data-act=filter][data-v=All]'); await p.waitForTimeout(100);
+
   // ---------- Dictation parser ----------
   const parse = (s) => p.evaluate((x) => window.__parseSpoken(x), s);
   const cases = [
@@ -44,6 +60,7 @@ const ROUTINE = {
     ['plank a minute and a half', { ex: 'plank', secs: 90 }],
     ['three sets of eight reps deadlift at two hundred twenty five', { ex: 'deadlift', sets: 3, reps: 8, w: 225 }],
     ['bench 60 kilos 5 reps', { ex: 'bench', unit: 'kg', w: 60, reps: 5 }],
+    ['kettlebell swings 3 sets of 15 at 35 pounds', { ex: 'kbswing', sets: 3, reps: 15, w: 35 }],
   ];
   for (const [s, want] of cases) {
     const got = await parse(s);

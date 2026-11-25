@@ -9,6 +9,7 @@ The app's files are in `public/` (that's the folder Netlify publishes):
 - `public/css/app.css`: all styles
 - `public/exercises.js`: the 15 built-in exercises (steps, tips, mistakes, alternatives) and the animated form diagrams
 - `public/exercises-more.js`: the extra exercises the plans use, plus cardio
+- `public/exercises-kb.js`: 16 kettlebell exercises (swing, goblet squat, clean, press, snatch, Turkish get-up, halo, windmill and more)
 - `public/plans.js`: the 3/4/5/6-day Push Pull Legs plans and the Cardio goal
 - `public/photos.js` and `public/photos/`: start/finish photos for each exercise (free-exercise-db collection)
 - `public/config.js`: Firebase settings and this app's household phrase

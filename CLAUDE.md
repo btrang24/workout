@@ -47,7 +47,7 @@ A household workout tracker. Static web app in `public/` (no build step), shared
 
 ## Project notes
 
-- No framework and no build step for the app. Keep it that way. Script order in `index.html`: `config.js`, `exercises.js`, `exercises-more.js`, `plans.js`, `photos.js`, then `js/main.js` (a module).
+- No framework and no build step for the app. Keep it that way. Script order in `index.html`: `config.js`, `exercises.js`, `exercises-more.js`, `exercises-kb.js` (kettlebell set), `plans.js`, `photos.js`, then `js/main.js` (a module).
 - Follow `ARCHITECTURE.md`: one feature per file in `public/js/features/`. A feature registers itself with `view`, `action`, `slot`, `collection` and `hook` from `js/core/ui.js`, and is imported once in `js/main.js`. Core files never import features. Read logs through the lookups in `js/core/state.js` (`index()`, `logsFor`, `myLogs`); don't scan `S.logs` in screen code.
 - Firestore rules (`firestore.rules`) allow everything under `/gyms/{hid}/`. New collections need no rule change, but keep the `households` rule for the recipe app.
 - The site is public to anyone with the link. Nothing sensitive goes in it. Never put keys or secrets in code or in `netlify.toml`.

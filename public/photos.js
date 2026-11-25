@@ -539,5 +539,145 @@ window.WORKOUT_PHOTOS = {
   "credit": "Elliptical Trainer",
   "source": "free-exercise-db",
   "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbswing": {
+  "src": "photos/kbswing-1.jpg",
+  "frames": [
+   "photos/kbswing-0.jpg",
+   "photos/kbswing-1.jpg"
+  ],
+  "credit": "One-Arm Kettlebell Swings",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbgoblet": {
+  "src": "photos/kbgoblet-1.jpg",
+  "frames": [
+   "photos/kbgoblet-0.jpg",
+   "photos/kbgoblet-1.jpg"
+  ],
+  "credit": "Goblet Squat",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbclean": {
+  "src": "photos/kbclean-1.jpg",
+  "frames": [
+   "photos/kbclean-0.jpg",
+   "photos/kbclean-1.jpg"
+  ],
+  "credit": "One-Arm Kettlebell Clean",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbpress": {
+  "src": "photos/kbpress-1.jpg",
+  "frames": [
+   "photos/kbpress-0.jpg",
+   "photos/kbpress-1.jpg"
+  ],
+  "credit": "Alternating Kettlebell Press",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbsnatch": {
+  "src": "photos/kbsnatch-1.jpg",
+  "frames": [
+   "photos/kbsnatch-0.jpg",
+   "photos/kbsnatch-1.jpg"
+  ],
+  "credit": "One-Arm Kettlebell Snatch",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbtgu": {
+  "src": "photos/kbtgu-1.jpg",
+  "frames": [
+   "photos/kbtgu-0.jpg",
+   "photos/kbtgu-1.jpg"
+  ],
+  "credit": "Kettlebell Turkish Get-Up (Lunge style)",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbwindmill": {
+  "src": "photos/kbwindmill-1.jpg",
+  "frames": [
+   "photos/kbwindmill-0.jpg",
+   "photos/kbwindmill-1.jpg"
+  ],
+  "credit": "Kettlebell Windmill",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbsldl": {
+  "src": "photos/kbsldl-1.jpg",
+  "frames": [
+   "photos/kbsldl-0.jpg",
+   "photos/kbsldl-1.jpg"
+  ],
+  "credit": "Kettlebell One-Legged Deadlift",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbrow": {
+  "src": "photos/kbrow-1.jpg",
+  "frames": [
+   "photos/kbrow-0.jpg",
+   "photos/kbrow-1.jpg"
+  ],
+  "credit": "One-Arm Kettlebell Row",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbtwist": {
+  "src": "photos/kbtwist-1.jpg",
+  "frames": [
+   "photos/kbtwist-0.jpg",
+   "photos/kbtwist-1.jpg"
+  ],
+  "credit": "Russian Twist",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbcarry": {
+  "src": "photos/kbcarry-1.jpg",
+  "frames": [
+   "photos/kbcarry-0.jpg",
+   "photos/kbcarry-1.jpg"
+  ],
+  "credit": "Farmer's Walk",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbhighpull": {
+  "src": "photos/kbhighpull-1.jpg",
+  "frames": [
+   "photos/kbhighpull-0.jpg",
+   "photos/kbhighpull-1.jpg"
+  ],
+  "credit": "Kettlebell Sumo High Pull",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbthruster": {
+  "src": "photos/kbthruster-1.jpg",
+  "frames": [
+   "photos/kbthruster-0.jpg",
+   "photos/kbthruster-1.jpg"
+  ],
+  "credit": "Kettlebell Thruster",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
+ },
+ "kbfig8": {
+  "src": "photos/kbfig8-1.jpg",
+  "frames": [
+   "photos/kbfig8-0.jpg",
+   "photos/kbfig8-1.jpg"
+  ],
+  "credit": "Kettlebell Figure 8",
+  "source": "free-exercise-db",
+  "page": "https://github.com/yuhonas/free-exercise-db"
  }
 };

@@ -5,7 +5,7 @@
 // - Updates: sw.js itself is never cached (see netlify.toml). When it changes, the new worker
 //   installs, deletes the old copy and takes over; the page then reloads once (js/main.js),
 //   so a phone never mixes old and new files. So: bump VERSION whenever the app changes.
-const VERSION = "v11";
+const VERSION = "v13";
 const CACHE = "workouts-" + VERSION;
 const SHELL = ["./", "index.html", "css/app.css", "js/main.js", "manifest.webmanifest", "icon-192.png"];
 
